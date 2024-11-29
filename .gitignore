@@ -1,0 +1,5 @@
+.vs/**
+Debug/**
+x64/**
+cs300_Assignment/**
+*.user
