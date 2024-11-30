@@ -17,18 +17,18 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
 
     //TODO: ADD CAMERA CONTROLS
     //W,A,S,D,Q,E - CAMERA CONTROL
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_A) == GLFW_PRESS)
+    if (glfwGetKey(pWindow, GLFW_KEY_A) == GLFW_PRESS)
         ptr->RotateCamY(1);
-    else if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_D) == GLFW_PRESS)
+    else if (glfwGetKey(pWindow, GLFW_KEY_D) == GLFW_PRESS)
         ptr->RotateCamY(-1);
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_W) == GLFW_PRESS)
+    if (glfwGetKey(pWindow, GLFW_KEY_W) == GLFW_PRESS)
         ptr->RotateCamX(-1);
-    else if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_S) == GLFW_PRESS)
+    else if (glfwGetKey(pWindow, GLFW_KEY_S) == GLFW_PRESS)
         ptr->RotateCamX(1);
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_Q) == GLFW_PRESS)
-        ptr->ZoomCamZ(1);
-    else if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_E) == GLFW_PRESS)
+    if (glfwGetKey(pWindow, GLFW_KEY_Q) == GLFW_PRESS)
         ptr->ZoomCamZ(-1);
+    else if (glfwGetKey(pWindow, GLFW_KEY_E) == GLFW_PRESS)
+        ptr->ZoomCamZ(1);
         
     //TODO: ADD/DECRESE SLICES
     //TODO: TRIGGER WIREFRAME
