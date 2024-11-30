@@ -18,9 +18,10 @@ struct Level
 
 	static Level* GetPtr();
 	static void DeletePtr();
-
 	void ReloadShaderProgram();
+	void RotateCamX(float angle);
 	void RotateCamY(float angle);
+	void ZoomCamZ(float size);
 private:
 	void Render(Model*);
 	Level();

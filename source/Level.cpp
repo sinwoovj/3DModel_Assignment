@@ -187,9 +187,32 @@ void Level::ReloadShaderProgram()
 	shader = new cg::Program(v.str().c_str(), f.str().c_str());
 }
 
+void Level::RotateCamX(float angle)
+{
+	glm::vec3 dir = glm::normalize(cam.camTarget - cam.camPos);
+	glm::vec3 camRight = glm::normalize(glm::cross(cam.camUp, dir));
+
+	cam.camPos = cam.camTarget - glm::vec3(
+		glm::rotate(
+			glm::identity<glm::mat4>(), 
+			glm::radians(-angle), 
+			camRight)
+		* glm::vec4(cam.camTarget - cam.camPos,1));
+}
+
 void Level::RotateCamY(float angle)
 {
-	cam.camPos = cam.camTarget - glm::vec3(glm::rotate(glm::identity<glm::mat4>(), glm::radians(-angle), cam.camUp) * glm::vec4(cam.camTarget - cam.camPos,1));
+	cam.camPos = cam.camTarget - glm::vec3(
+		glm::rotate(
+			glm::identity<glm::mat4>(), 
+			glm::radians(-angle), 
+			cam.camUp)
+		* glm::vec4(cam.camTarget - cam.camPos,1));
+}
+
+void Level::ZoomCamZ(float size)
+{
+	cam.camPos.z += size;
 }
 
 void Level::Render(Model* obj)
