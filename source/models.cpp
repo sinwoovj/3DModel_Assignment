@@ -10,7 +10,7 @@
 #include "../extern/tiny_obj_loader.h"
 
 
-int Model::slices = 5;
+int Model::slices = 4;
 
 glm::mat4x4 Model::ComputeMatrix()
 {
@@ -300,235 +300,92 @@ void Model::CreateModelCube()
 {
 	//TODO: Points
 	//버텍스
-	std::vector<float> Cube_Vertex = {
-		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
+	float size = 0.5f;
+	std::vector<glm::vec3> Cube_Vertex = {
+		glm::vec3(-size, -size, -size),
+		glm::vec3(size, -size, -size),
+		glm::vec3(size, size, -size),
+		glm::vec3(-size, size, -size),
+		glm::vec3(-size, -size, size),
+		glm::vec3(size, -size, size),
+		glm::vec3(size, size, size),
+		glm::vec3(-size, size, size),
 	};
-	std::vector<float> Cube_Normal = {
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
+	std::vector<glm::vec3> Cube_Normal = {
+		glm::vec3(0, 0, -1), // 앞
+		glm::vec3(0, 0, 1),	 // 뒤
+		glm::vec3(-1, 0, 0), // 왼
+		glm::vec3(1, 0, 0),	 // 오른
+		glm::vec3(0, 1, 0),	 // 위
+		glm::vec3(0, -1, 0), // 아래
 	};
-	std::vector<float> Cube_TexCoord = {
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 1,
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 1
+	std::vector<glm::vec2> Cube_TexCoord = {
+		{ 0.0f, 0.0f },
+		{ 1.0f, 0.0f },
+		{ 1.0f, 1.0f },
+		{ 0.0f, 0.0f },
+		{ 1.0f, 1.0f },
+		{ 0.0f, 1.0f },
 	};
-	//인덱스
-	std::vector<int> Vertex_Indexs = {
-		0, 1, 3,
-		3, 1, 2, // Front face.
-		0, 1, 4,
-		4, 5, 1, // Bottom face.
-		1, 2, 5,
-		5, 6, 2, // Right face.
-		2, 3, 6,
-		6, 7, 3, // Top face.
-		3, 7, 4,
-		4, 3, 0, // Left face.
-		4, 5, 7,
-		7, 6, 5, // Rear face.
-	};
-	std::vector<int> Normal_Indexs = {
-		0, 1, 3,
-		3, 1, 2, // Front face.
-		0, 1, 4,
-		4, 5, 1, // Bottom face.
-		1, 2, 5,
-		5, 6, 2, // Right face.
-		2, 3, 6,
-		6, 7, 3, // Top face.
-		3, 7, 4,
-		4, 3, 0, // Left face.
-		4, 5, 7,
-		7, 6, 5, // Rear face.
-	};
-	std::vector<int> Texcoords_Indexs = {
-		0, 1, 3,
-		3, 1, 2, // Front face.
-		0, 1, 4,
-		4, 5, 1, // Bottom face.
-		1, 2, 5,
-		5, 6, 2, // Right face.
-		2, 3, 6,
-		6, 7, 3, // Top face.
-		3, 7, 4,
-		4, 3, 0, // Left face.
-		4, 5, 7,
-		7, 6, 5, // Rear face.
-	};
-	//TODO: UVs
 
-	//TODO: Normals
-
-	std::vector<glm::vec3> temp;
-	std::vector<glm::vec3> tempN;
-	std::vector<glm::vec2> tempUV;
-
-	//Save mesh points
-	for (int i = 0; i < Cube_Vertex.size(); i += 3)
+	std::vector<int> Vertex_Indexs
 	{
-		temp.push_back({ Cube_Vertex[i], Cube_Vertex[i + 1], Cube_Vertex[i + 2] });
-	}
-
-	//Save mesh normals
-	for (int i = 0; i < Cube_Normal.size(); i += 3)
-	{
-		tempN.push_back({ Cube_Normal[i], Cube_Normal[i + 1], Cube_Normal[i + 2] });
-	}
-
-	//Save UV
-	for (int i = 0; i < Cube_TexCoord.size(); i += 2)
-	{
-		tempUV.push_back({ Cube_TexCoord[i], Cube_TexCoord[i + 1] });
-	}
+		1, 0, 3, 1, 3, 2,// 뒷면
+		4, 5, 6, 4, 6, 7,// 앞면
+		0, 4, 7, 0, 7, 3,// 왼쪽
+		5, 1, 2, 5, 2, 6,// 오른쪽
+		6, 2, 3, 6, 3, 7,// 위
+		4, 0, 1, 4, 1, 5// 아래
+	};
 
 	//(vertex indexes)
+	int i = 0;
 	for (auto p : Vertex_Indexs)
 	{
 		//Load vertexes
-		points.push_back(temp[p]);
-	}
-	for (auto p : Normal_Indexs)
-	{
-		//Load Normals
-		normals.push_back(tempN[p]);
-	}
-	for (auto p : Texcoords_Indexs)
-	{
-		//Load Indexes
-		UV.push_back(tempUV[p]);
+		points.push_back(Cube_Vertex[p]);
+		normals.push_back(Cube_Normal[int(i / 6)]);
+		// 각 면의 UV 좌표 설정
+		UV.push_back(Cube_TexCoord[i % 6]);
+		i++;
 	}
 }
 
 void Model::CreateModelCone(int slices)
 {
-	//TODO: Points
-	//버텍스
-	std::vector<float> Cone_Vertex =
-	{
-		0.0f, 0.5f, 0.0f
-	};
+	std::vector<glm::vec3> Cone_Vertex;
 	float r = 0.5f;
 	for (int i = 0; i < slices; i++) {
 		float angle = 2.0f * glm::pi<float>() * i / slices;
-		Cone_Vertex.push_back(r * cos(angle)); 
-		Cone_Vertex.push_back(-0.5f);
-		Cone_Vertex.push_back(r* sin(angle));
+		Cone_Vertex.push_back({ r * cos(angle),-0.5f,r * sin(angle) });
 	}
-	Cone_Vertex.push_back(0.0f);
-	Cone_Vertex.push_back(-0.5f);
-	Cone_Vertex.push_back(0.0f);
-	std::vector<float> Cone_Normal;
-	for (int i = 0; i < slices + 2; i++) {
-		Cone_Normal.push_back(0.0f);
-		Cone_Normal.push_back(0.0f);
-		Cone_Normal.push_back(1.0f);
-	}
-	std::vector<float> Cone_TexCoord{0, 1 };
-	for (int i = 0; i <= slices + 2; ++i) {
-		float angle = 2.0f * glm::pi<float>() * i / slices;
-		Cone_TexCoord.push_back(r * cos(angle) + 0.5);
-		Cone_TexCoord.push_back(r * sin(angle) + 0.5);
-	}
+	Cone_Vertex.push_back({ 0.0f, -0.5f, 0.0f }); //Bottom
+	Cone_Vertex.push_back({ 0.0f,  0.5f, 0.0f }); //Top
+
 	//인덱스
 	std::vector<int> Vertex_Indexs;
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Vertex_Indexs.push_back(0);  // 꼭짓점
-		Vertex_Indexs.push_back(1 + i); // 현재 밑면 정점
-		Vertex_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	for (int i = 0; i <= slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Vertex_Indexs.push_back(slices+1);      // 밑면 첫 정점
-		Vertex_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Vertex_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-
-	std::vector<int> Normal_Indexs;
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Normal_Indexs.push_back(0);  // 꼭짓점
-		Normal_Indexs.push_back(1 + i); // 현재 밑면 정점
-		Normal_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	for (int i = 0; i <= slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Normal_Indexs.push_back(slices + 1);      // 밑면 첫 정점
-		Normal_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Normal_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	std::vector<int> Texcoords_Indexs;
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Texcoords_Indexs.push_back(0);  // 꼭짓점
-		Texcoords_Indexs.push_back(1 + i); // 현재 밑면 정점
-		Texcoords_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	for (int i = 0; i <= slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Texcoords_Indexs.push_back(slices + 1);      // 밑면 첫 정점
-		Texcoords_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Texcoords_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	//TODO: UVs
-
-	//TODO: Normals
-
-	std::vector<glm::vec3> temp;
-	std::vector<glm::vec3> tempN;
-	std::vector<glm::vec2> tempUV;
-
-	//Save mesh points
-	for (int i = 0; i < Cone_Vertex.size(); i += 3)
+	for (int i = 0; i < slices*2; i++)
 	{
-		temp.push_back({ Cone_Vertex[i], Cone_Vertex[i + 1], Cone_Vertex[i + 2] });
-	}
+		int prsc = i % slices;
+		int ntsc = (i + 1) % slices;
+		glm::vec3 tb = Cone_Vertex[int(i / slices) + slices];
+		glm::vec3 pres = Cone_Vertex[prsc];
+		glm::vec3 next = Cone_Vertex[ntsc];
 
-	//Save mesh normals
-	for (int i = 0; i < Cone_Normal.size(); i += 3)
-	{
-		tempN.push_back({ Cone_Normal[i], Cone_Normal[i + 1], Cone_Normal[i + 2] });
-	}
+		points.push_back(pres);
+		normals.push_back({glm::cross(glm::vec3(tb - pres),
+			glm::vec3(next - pres)) });
+		UV.push_back({ float(prsc) / slices, 0 });
 
-	//Save UV
-	for (int i = 0; i+1 < Cone_TexCoord.size(); i += 2)
-	{
-		tempUV.push_back({ Cone_TexCoord[i], Cone_TexCoord[i + 1] });
-	}
+		points.push_back(tb);
+		normals.push_back({glm::cross(glm::vec3(pres - tb),
+			glm::vec3(next - tb)) });
+		UV.push_back({(float(prsc) + 0.5f) / slices, int(i / slices) });
 
-	//(vertex indexes)
-	for (auto p : Vertex_Indexs)
-	{
-		//Load vertexes
-		points.push_back(temp[p]);
-	}
-	for (auto p : Normal_Indexs)
-	{
-		//Load Normals
-		normals.push_back(tempN[p]);
-	}
-	for (auto p : Texcoords_Indexs)
-	{
-		//Load Indexes
-		UV.push_back(tempUV[p]);
+		points.push_back(next);
+		normals.push_back({ glm::cross(glm::vec3(tb - next),
+			glm::vec3(pres - next)) });
+		UV.push_back({ float(ntsc) / slices, 0 });
 	}
 }
 
