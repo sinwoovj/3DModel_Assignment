@@ -222,9 +222,9 @@ void Model::CreateModelPlane()
 	//TODO: Points
 	//버텍스
 	std::vector<float> Plane_Vertex = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
 		 0.5f,  0.5f, 0.0f,
+		 0.5f, -0.5f, 0.0f,
+		-0.5f, -0.5f, 0.0f,
 		-0.5f,  0.5f, 0.0f,
 	};
 	std::vector<float> Plane_Normal = {
@@ -234,23 +234,23 @@ void Model::CreateModelPlane()
 		0.0f, 0.0f, 1.0f,
 	};
 	std::vector<float> Plane_TexCoord = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.5f,  0.5f, 0.0f,
-		-0.5f,  0.5f, 0.0f,
+		 1.f,  1.f,
+		 1.f, 0.0f,
+		0.0f, 0.0f,
+		0.0f, 1.f
 	};
 	//인덱스
 	std::vector<int> Vertex_Indexs = {
-		0, 1, 2,
-		0, 2, 3
+		2, 3, 0,
+		2, 1, 0
 	};
 	std::vector<int> Normal_Indexs = {
-		0, 1, 2,
-		0, 2, 3
+		2, 3, 0,
+		2, 1, 0
 	};
 	std::vector<int> Texcoords_Indexs = {
-		0, 1, 2,
-		0, 2, 3
+		2, 3, 0,
+		2, 1, 0
 	};
 	//TODO: UVs
 
@@ -321,14 +321,14 @@ void Model::CreateModelCube()
 		0.0f, 0.0f, 1.0f,
 	};
 	std::vector<float> Cube_TexCoord = {
-		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
+		0, 0,
+		1, 0,
+		1, 1,
+		0, 1,
+		0, 0,
+		1, 0,
+		1, 1,
+		0, 1
 	};
 	//인덱스
 	std::vector<int> Vertex_Indexs = {
@@ -432,17 +432,20 @@ void Model::CreateModelCone(int slices)
 		Cone_Vertex.push_back(-0.5f);
 		Cone_Vertex.push_back(r* sin(angle));
 	}
+	Cone_Vertex.push_back(0.0f);
+	Cone_Vertex.push_back(-0.5f);
+	Cone_Vertex.push_back(0.0f);
 	std::vector<float> Cone_Normal;
-	for (int i = 0; i < slices + 1; i++) {
+	for (int i = 0; i < slices + 2; i++) {
 		Cone_Normal.push_back(0.0f);
 		Cone_Normal.push_back(0.0f);
 		Cone_Normal.push_back(1.0f);
 	}
-	std::vector<float> Cone_TexCoord;
-	for (int i = 0; i <= slices + 1; ++i) {
-		Cone_TexCoord.push_back(0.0f);
-		Cone_TexCoord.push_back(0.0f);
-		Cone_TexCoord.push_back(1.0f);
+	std::vector<float> Cone_TexCoord{0, 1 };
+	for (int i = 0; i <= slices + 2; ++i) {
+		float angle = 2.0f * glm::pi<float>() * i / slices;
+		Cone_TexCoord.push_back(r * cos(angle) + 0.5);
+		Cone_TexCoord.push_back(r * sin(angle) + 0.5);
 	}
 	//인덱스
 	std::vector<int> Vertex_Indexs;
@@ -452,10 +455,11 @@ void Model::CreateModelCone(int slices)
 		Vertex_Indexs.push_back(1 + i); // 현재 밑면 정점
 		Vertex_Indexs.push_back(1 + next); // 다음 밑면 정점
 	}
-	for (int i = 1; i < slices - 1; i++) {
-		Vertex_Indexs.push_back(1);      // 밑면 첫 정점
+	for (int i = 0; i <= slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Vertex_Indexs.push_back(slices+1);      // 밑면 첫 정점
 		Vertex_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Vertex_Indexs.push_back(1 + i + 1); // 다음 밑면 정점
+		Vertex_Indexs.push_back(1 + next); // 다음 밑면 정점
 	}
 
 	std::vector<int> Normal_Indexs;
@@ -465,10 +469,11 @@ void Model::CreateModelCone(int slices)
 		Normal_Indexs.push_back(1 + i); // 현재 밑면 정점
 		Normal_Indexs.push_back(1 + next); // 다음 밑면 정점
 	}
-	for (int i = 1; i < slices - 1; i++) {
-		Normal_Indexs.push_back(1);      // 밑면 첫 정점
+	for (int i = 0; i <= slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Normal_Indexs.push_back(slices + 1);      // 밑면 첫 정점
 		Normal_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Normal_Indexs.push_back(1 + i + 1); // 다음 밑면 정점
+		Normal_Indexs.push_back(1 + next); // 다음 밑면 정점
 	}
 	std::vector<int> Texcoords_Indexs;
 	for (int i = 0; i < slices; i++) {
@@ -477,10 +482,11 @@ void Model::CreateModelCone(int slices)
 		Texcoords_Indexs.push_back(1 + i); // 현재 밑면 정점
 		Texcoords_Indexs.push_back(1 + next); // 다음 밑면 정점
 	}
-	for (int i = 1; i < slices - 1; i++) {
-		Texcoords_Indexs.push_back(1);      // 밑면 첫 정점
+	for (int i = 0; i <= slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Texcoords_Indexs.push_back(slices + 1);      // 밑면 첫 정점
 		Texcoords_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Texcoords_Indexs.push_back(1 + i + 1); // 다음 밑면 정점
+		Texcoords_Indexs.push_back(1 + next); // 다음 밑면 정점
 	}
 	//TODO: UVs
 
@@ -529,10 +535,184 @@ void Model::CreateModelCone(int slices)
 void Model::CreateModelCylinder(int slices)
 {
 	//TODO: Points
+	//버텍스
+	std::vector<float> Cylinder_Vertex =
+	{
+		0.0f, 0.5f, 0.0f
+	};
+	float r = 0.5f;
+	for (int i = 0; i < slices; i++) {
+		float angle = 2.0f * glm::pi<float>() * i / slices;
+		Cylinder_Vertex.push_back(r * cos(angle));
+		Cylinder_Vertex.push_back(0.5f);
+		Cylinder_Vertex.push_back(r * sin(angle));
+	}
+	for (int i = 0; i < slices; i++) {
+		float angle = 2.0f * glm::pi<float>() * i / slices;
+		Cylinder_Vertex.push_back(r * cos(angle));
+		Cylinder_Vertex.push_back(-0.5f);
+		Cylinder_Vertex.push_back(r * sin(angle));
+	}
+	Cylinder_Vertex.push_back(0.0f);
+	Cylinder_Vertex.push_back(-0.5f);
+	Cylinder_Vertex.push_back(0.0f);
 
+	std::vector<float> Cylinder_Normal;
+	for (int i = 0; i < (slices + 1) * 2; i++) {
+		Cylinder_Normal.push_back(0.0f);
+		Cylinder_Normal.push_back(0.0f);
+		Cylinder_Normal.push_back(1.0f);
+	}
+	std::vector<float> Cylinder_TexCoord;
+	// 윗면 중심점 추가 (UV: 중심)
+	Cylinder_TexCoord.push_back(0.5f); // U
+	Cylinder_TexCoord.push_back(0.5f); // V
+
+	// 윗면 주변 점 (UV: 원의 중심을 기준으로 배치)
+	for (int i = 0; i < slices; i++) {
+		float angle = 2.0f * glm::pi<float>() * i / slices;
+		float u = 0.5f + 0.5f * cos(angle); // U
+		float v = 0.5f + 0.5f * sin(angle); // V
+		Cylinder_TexCoord.push_back(u);
+		Cylinder_TexCoord.push_back(v);
+	}
+
+	// 옆면 (UV: 펼쳤을 때 직사각형 형태로 매핑)
+	for (int i = 0; i < slices; i++) {
+		float angle = 2.0f * glm::pi<float>() * i / slices;
+		float u = static_cast<float>(i) / slices; // U: 각도를 기준으로 균등 배치
+
+		// 윗면 정점 UV
+		Cylinder_TexCoord.push_back(u);    // U
+		Cylinder_TexCoord.push_back(1.0f); // V: 윗면
+
+		// 아랫면 정점 UV
+		Cylinder_TexCoord.push_back(u);    // U
+		Cylinder_TexCoord.push_back(0.0f); // V: 아랫면
+	}
+
+	// 아랫면 중심점 추가 (UV: 중심)
+	Cylinder_TexCoord.push_back(0.5f); // U
+	Cylinder_TexCoord.push_back(0.5f); // V
+
+	// 아랫면 주변 점 (UV: 원의 중심을 기준으로 배치)
+	for (int i = 0; i < slices; i++) {
+		float angle = 2.0f * glm::pi<float>() * i / slices;
+		float u = 0.5f + 0.5f * cos(angle); // U
+		float v = 0.5f + 0.5f * sin(angle); // V
+		Cylinder_TexCoord.push_back(u);
+		Cylinder_TexCoord.push_back(v);
+	}
+	//인덱스
+	std::vector<int> Vertex_Indexs;
+	for (int i = 0; i < slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Vertex_Indexs.push_back(0);  // 꼭짓점
+		Vertex_Indexs.push_back(1 + i); // 현재 밑면 정점
+		Vertex_Indexs.push_back(1 + next); // 다음 밑면 정점
+	}
+	for (int i = 0; i < slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Vertex_Indexs.push_back(i+1);  // 꼭짓점
+		Vertex_Indexs.push_back(i + 1 + slices); // 현재 밑면 정점
+		Vertex_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
+		Vertex_Indexs.push_back(i + 1);  // 꼭짓점
+		Vertex_Indexs.push_back(next + 1); // 현재 밑면 정점
+		Vertex_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
+	}
+	for (int i = slices; i < slices*2; i++) {
+		int next = (i + 1) % (slices)+slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Vertex_Indexs.push_back(slices*2 + 1);      // 밑면 첫 정점
+		Vertex_Indexs.push_back(1 + i);  // 현재 밑면 정점
+		Vertex_Indexs.push_back(1 + next); // 다음 밑면 정점
+	}
+
+	std::vector<int> Normal_Indexs;
+	for (int i = 0; i < slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Normal_Indexs.push_back(0);  // 꼭짓점
+		Normal_Indexs.push_back(1 + i); // 현재 밑면 정점
+		Normal_Indexs.push_back(1 + next); // 다음 밑면 정점
+	}
+	for (int i = 0; i < slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Normal_Indexs.push_back(i + 1);  // 꼭짓점
+		Normal_Indexs.push_back(i + 1 + slices); // 현재 밑면 정점
+		Normal_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
+		Normal_Indexs.push_back(i + 1);  // 꼭짓점
+		Normal_Indexs.push_back(next + 1); // 현재 밑면 정점
+		Normal_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
+	}
+	for (int i = slices; i < slices * 2; i++) {
+		int next = (i + 1) % (slices)+slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Normal_Indexs.push_back(slices * 2 + 1);      // 밑면 첫 정점
+		Normal_Indexs.push_back(1 + i);  // 현재 밑면 정점
+		Normal_Indexs.push_back(1 + next); // 다음 밑면 정점
+	}
+	std::vector<int> Texcoords_Indexs;
+	for (int i = 0; i < slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Texcoords_Indexs.push_back(0);  // 꼭짓점
+		Texcoords_Indexs.push_back(1 + i); // 현재 밑면 정점
+		Texcoords_Indexs.push_back(1 + next); // 다음 밑면 정점
+	}
+	for (int i = 0; i < slices; i++) {
+		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Texcoords_Indexs.push_back(i + 1);  // 꼭짓점
+		Texcoords_Indexs.push_back(i + 1 + slices); // 현재 밑면 정점
+		Texcoords_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
+		Texcoords_Indexs.push_back(i + 1);  // 꼭짓점
+		Texcoords_Indexs.push_back(next + 1); // 현재 밑면 정점
+		Texcoords_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
+	}
+	for (int i = slices; i < slices * 2; i++) {
+		int next = (i + 1) % (slices) + slices; // 마지막 정점 다음은 첫 번째 정점으로
+		Texcoords_Indexs.push_back(slices * 2 + 1);      // 밑면 첫 정점
+		Texcoords_Indexs.push_back(1 + i);  // 현재 밑면 정점
+		Texcoords_Indexs.push_back(1 + next); // 다음 밑면 정점
+	}
 	//TODO: UVs
 
 	//TODO: Normals
+
+	std::vector<glm::vec3> temp;
+	std::vector<glm::vec3> tempN;
+	std::vector<glm::vec2> tempUV;
+
+	//Save mesh points
+	for (int i = 0; i < Cylinder_Vertex.size(); i += 3)
+	{
+		temp.push_back({ Cylinder_Vertex[i], Cylinder_Vertex[i + 1], Cylinder_Vertex[i + 2] });
+	}
+
+	//Save mesh normals
+	for (int i = 0; i < Cylinder_Normal.size(); i += 3)
+	{
+		tempN.push_back({ Cylinder_Normal[i], Cylinder_Normal[i + 1], Cylinder_Normal[i + 2] });
+	}
+
+	//Save UV
+	for (int i = 0; i + 1 < Cylinder_TexCoord.size(); i += 2)
+	{
+		tempUV.push_back({ Cylinder_TexCoord[i], Cylinder_TexCoord[i + 1] });
+	}
+
+	//(vertex indexes)
+	for (auto p : Vertex_Indexs)
+	{
+		//Load vertexes
+		points.push_back(temp[p]);
+	}
+	for (auto p : Normal_Indexs)
+	{
+		//Load Normals
+		normals.push_back(tempN[p]);
+	}
+	for (auto p : Texcoords_Indexs)
+	{
+		//Load Indexes
+		UV.push_back(tempUV[p]);
+	}
 }
 
 void Model::CreateModelSphere(int slices)

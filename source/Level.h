@@ -24,6 +24,7 @@ struct Level
 	void RotateCamY(float angle);
 	void ZoomCamZ(float size);
 	void AddObject(Model* model);
+	std::vector<Model*> allObjects;
 private:
 	void Render(Model*);
 	Level();
@@ -35,7 +36,6 @@ private:
 
 	GLFWwindow* window;
 
-	std::vector<Model*> allObjects;
 
 	//keyState
 	struct KeyState

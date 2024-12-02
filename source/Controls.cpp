@@ -1,6 +1,7 @@
 #include "Controls.h"
 #include "Level.h"
 #include <GLFW/glfw3.h>
+#include "models.h"
 
 void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int action, int mods)
 {
@@ -42,8 +43,24 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
         ptr->key.F = action;
     if (key == GLFW_KEY_M)
         ptr->key.M = action;
-    if (key == GLFW_KEY_Z)
-        ptr->key.Z = action;
-    if (key == GLFW_KEY_X)
-        ptr->key.X = action;
+
+    if (action == GLFW_PRESS)
+    {
+        if (key == GLFW_KEY_Z)
+        {
+            if (Model::slices > 3) Model::slices--;
+            for (auto o : ptr->allObjects)
+            {
+                o->InitModel();
+            }
+        }
+        if (key == GLFW_KEY_X)
+        {
+            Model::slices++;
+            for (auto o : ptr->allObjects)
+            {
+                o->InitModel();
+            }
+        }
+    }
 }

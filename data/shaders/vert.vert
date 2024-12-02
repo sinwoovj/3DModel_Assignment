@@ -12,6 +12,6 @@ out vec2 UV;
 void main()
 {
    gl_Position = model * vPosition;
-   
+   UV = vTextCoords;
    color = vec4(0.5,0.5,0.5,1);
 }
