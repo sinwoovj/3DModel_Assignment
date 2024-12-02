@@ -81,19 +81,7 @@ void Level::Run()
 	// Main loop
 	while (!glfwWindowShouldClose(window)) 
 	{	
-		//W,A,S,D,Q,E - CAMERA CONTROL
-		if (key.A == GLFW_PRESS)
-			ptr->RotateCamY(1);
-		else if (key.D == GLFW_PRESS)
-			ptr->RotateCamY(-1);
-		if (key.W == GLFW_PRESS)
-			ptr->RotateCamX(-1);
-		else if (key.S == GLFW_PRESS)
-			ptr->RotateCamX(1);
-		if (key.Q == GLFW_PRESS)
-			ptr->ZoomCamZ(-1);
-		else if (key.E == GLFW_PRESS)
-			ptr->ZoomCamZ(1);
+		KeyCheck();
 
 		// Render graphics here
 		 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -258,4 +246,21 @@ Level::~Level()
 		delete m;
 
 	allObjects.clear();
+}
+
+void Level::KeyCheck()
+{
+	//W,A,S,D,Q,E - CAMERA CONTROL
+	if (key.A == GLFW_PRESS || key.A == GLFW_REPEAT)
+		ptr->RotateCamY(1);
+	if (key.D == GLFW_PRESS || key.D == GLFW_REPEAT)
+		ptr->RotateCamY(-1);
+	if (key.W == GLFW_PRESS || key.W == GLFW_REPEAT)
+		ptr->RotateCamX(-1);
+	if (key.S == GLFW_PRESS || key.S == GLFW_REPEAT)
+		ptr->RotateCamX(1);
+	if (key.Q == GLFW_PRESS || key.Q == GLFW_REPEAT)
+		ptr->ZoomCamZ(-1);
+	if (key.E == GLFW_PRESS || key.E == GLFW_REPEAT)
+		ptr->ZoomCamZ(1);
 }

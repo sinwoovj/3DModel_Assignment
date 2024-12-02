@@ -83,6 +83,7 @@ private:
 			F = v;
 		}
 	};
+	void KeyCheck();
 public:
 	KeyState key;
 private:
