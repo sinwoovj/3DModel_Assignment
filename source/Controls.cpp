@@ -46,6 +46,4 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
         ptr->key.Z = action;
     if (key == GLFW_KEY_X)
         ptr->key.X = action;
-        
-    
 }

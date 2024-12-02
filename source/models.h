@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CS300Parser.h"
-
+#include "Level.h"
 struct Model
 {
 	CS300Parser::Transform transf;
@@ -19,8 +19,10 @@ struct Model
 	std::vector<int> normalIndeces;
 	unsigned int VBO;
 	unsigned int VAO;
+	unsigned int EBO;
 
 	void LoadModel();
+	void InitModel();
 
 	Model(const CS300Parser::Transform& _transform);
 	~Model();

@@ -215,6 +215,11 @@ void Level::ZoomCamZ(float size)
 	cam.camPos.z += size;
 }
 
+void Level::AddObject(Model* model)
+{
+	allObjects.push_back(model);
+}
+
 void Level::Render(Model* obj)
 {
 	//use obj VBO
@@ -257,10 +262,24 @@ void Level::KeyCheck()
 	if (key.S == GLFW_PRESS || key.S == GLFW_REPEAT) ptr->RotateCamX(1);
 	if (key.Q == GLFW_PRESS || key.Q == GLFW_REPEAT) ptr->ZoomCamZ(-1);
 	if (key.E == GLFW_PRESS || key.E == GLFW_REPEAT) ptr->ZoomCamZ(1); 
-	if (key.N == GLFW_PRESS || key.N == GLFW_REPEAT);
+	if (key.N == GLFW_PRESS || key.N == GLFW_REPEAT) ;
 	if (key.T == GLFW_PRESS || key.T == GLFW_REPEAT);
 	if (key.F == GLFW_PRESS || key.F == GLFW_REPEAT);
 	if (key.M == GLFW_PRESS || key.M == GLFW_REPEAT);
-	if (key.Z == GLFW_PRESS || key.Z == GLFW_REPEAT);
-	if (key.X == GLFW_PRESS || key.X == GLFW_REPEAT);
+	if (key.Z == GLFW_PRESS || key.Z == GLFW_REPEAT)
+	{
+		if(Model::slices > 3) Model::slices--;
+		for (auto o : allObjects)
+		{
+			o->InitModel();
+		}
+	}
+	if (key.X == GLFW_PRESS || key.X == GLFW_REPEAT)
+	{
+		Model::slices++;
+		for (auto o : allObjects)
+		{
+			o->InitModel();
+		}
+	}
 }

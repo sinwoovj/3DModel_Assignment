@@ -23,6 +23,7 @@ struct Level
 	void RotateCamX(float angle);
 	void RotateCamY(float angle);
 	void ZoomCamZ(float size);
+	void AddObject(Model* model);
 private:
 	void Render(Model*);
 	Level();
