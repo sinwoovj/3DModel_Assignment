@@ -77,12 +77,24 @@ int Level::Initialize()
 
 void Level::Run()
 {
-
-
 	glClearColor(1, 1, 1, 1);
 	// Main loop
 	while (!glfwWindowShouldClose(window)) 
-	{
+	{	
+		//W,A,S,D,Q,E - CAMERA CONTROL
+		if (key.A == GLFW_PRESS)
+			ptr->RotateCamY(1);
+		else if (key.D == GLFW_PRESS)
+			ptr->RotateCamY(-1);
+		if (key.W == GLFW_PRESS)
+			ptr->RotateCamX(-1);
+		else if (key.S == GLFW_PRESS)
+			ptr->RotateCamX(1);
+		if (key.Q == GLFW_PRESS)
+			ptr->ZoomCamZ(-1);
+		else if (key.E == GLFW_PRESS)
+			ptr->ZoomCamZ(1);
+
 		// Render graphics here
 		 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

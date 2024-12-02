@@ -19,7 +19,6 @@ namespace Controls
      d - angle beta bigger (check handout)
      e - bigger distance to target (zoom out) (check handout)
      q - smaller distance to target (zoom out)  (check handout)
-
     TODO: ADD/DECRESE SLICES
      +/z - Increase Slices. Reloads Models
      -/x - Decrease Slices. Reloads Models

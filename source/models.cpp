@@ -162,7 +162,10 @@ Model::~Model()
 void Model::CreateModelPlane()
 {
 	//TODO: Points
-
+	//버텍스
+	//인덱스
+	//컬러
+	// 
 	//TODO: UVs
 
 	//TODO: Normals

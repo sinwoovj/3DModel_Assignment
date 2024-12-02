@@ -8,6 +8,7 @@ class Model;
 
 #include <vector>
 #include "program.h"
+#include <GLFW/glfw3.h>
 
 //Singleton level
 struct Level
@@ -35,8 +36,56 @@ private:
 
 	std::vector<Model*> allObjects;
 
+	//keyState
+	struct KeyState
+	{
+		//W,A,S,D,Q,E - CAMERA CONTROL
+		int W = GLFW_RELEASE;
+		int A = GLFW_RELEASE;
+		int S = GLFW_RELEASE;
+		int D = GLFW_RELEASE;
+		int Q = GLFW_RELEASE;
+		int E = GLFW_RELEASE;
+		
+		/*
+		TODO: ADD/DECRESE SLICES
+		 +/z - Increase Slices. Reloads Models
+		 -/x - Decrease Slices. Reloads Models
+		TODO: TRIGGER WIREFRAME
+		 m - Wireframe On/Off
+		TODO: TRIGGER TEXTURE
+		 T - Texture Mapping On/Off
+		TODO: TRIGGER NORMALS RENDER
+		 N - Rendering Normals On/Off
+		TODO: TRIGGER NORMALS AVERAGE
+		 F - Average Normals On/Off
+		*/
+		int Z = GLFW_RELEASE;
+		int X = GLFW_RELEASE;
+		int M = GLFW_RELEASE;
+		int T = GLFW_RELEASE;
+		int N = GLFW_RELEASE;
+		int F = GLFW_RELEASE;
 
-
+		void init(int v)
+		{
+			W = v;
+			A = v;
+			S = v;
+			D = v;
+			Q = v;
+			E = v;
+			Z = v;
+			X = v;
+			M = v;
+			T = v;
+			N = v;
+			F = v;
+		}
+	};
+public:
+	KeyState key;
+private:
 	//camera 
 	struct Camera
 	{
