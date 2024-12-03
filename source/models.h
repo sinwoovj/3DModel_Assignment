@@ -23,9 +23,10 @@ struct Model
 
 	void LoadModel();
 	void InitModel();
-
 	Model(const CS300Parser::Transform& _transform);
 	~Model();
+
+	void GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi);
 	
 	static int slices;
 

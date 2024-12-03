@@ -35,15 +35,8 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
         ptr->key.Q = action;
     if (key == GLFW_KEY_E)
         ptr->key.E = action;
-    if (key == GLFW_KEY_N)
-        ptr->key.N = action;
-    if (key == GLFW_KEY_T)
-        ptr->key.T = action;
-    if (key == GLFW_KEY_F)
-        ptr->key.F = action;
-    
 
-    if (action == GLFW_PRESS)
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
     {
         if (key == GLFW_KEY_M)
         {
@@ -51,7 +44,7 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
             polyState = !polyState;
             glPolygonMode(GL_FRONT_AND_BACK, polyState ? GL_LINE : GL_FILL);
         }
-        if (key == GLFW_KEY_Z)
+        if (key == GLFW_KEY_Z || key == GLFW_KEY_KP_SUBTRACT)
         {
             if (Model::slices > 3) Model::slices--;
             for (auto o : ptr->allObjects)
@@ -59,9 +52,21 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
                 o->InitModel();
             }
         }
-        if (key == GLFW_KEY_X)
+        if (key == GLFW_KEY_X || key == GLFW_KEY_KP_ADD)
         {
             Model::slices++;
+            for (auto o : ptr->allObjects)
+            {
+                o->InitModel();
+            }
+        }
+        if (key == GLFW_KEY_N)
+            ptr->showNormal = !ptr->showNormal;
+        /*if (key  == GLFW_KEY_T)
+            ptr->key.T = action;*/
+        if (key == GLFW_KEY_F)
+        {
+            ptr->normalAvg = !ptr->normalAvg;
             for (auto o : ptr->allObjects)
             {
                 o->InitModel();

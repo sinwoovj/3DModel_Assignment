@@ -32,6 +32,7 @@ namespace cg
     public:
         Program(GLuint handle);
         Program(const char* sv, const char* sf);
+        Program(const char* sv, const char* sf, const char* sg);
 
         ~Program();
 

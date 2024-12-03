@@ -84,10 +84,11 @@ void Level::Run()
 		KeyCheck();
 
 		// Render graphics here
-		 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//use shader program
 		glUseProgram(shader->handle);
+		
 
 		//Calculate Camera Matrix
 		glm::vec3 dir = glm::normalize(cam.camTarget - cam.camPos);
@@ -123,7 +124,15 @@ void Level::Run()
 			//Render the object
 			Render(o);
 		}
-
+		if (showNormal)
+		{
+			glUseProgram(normal_shader->handle);
+			for (auto o : allObjects)
+			{
+				//Render the object
+				Render(o);
+			}
+		}
 		glUseProgram(0);
 
 		glfwSwapBuffers(window);
@@ -168,9 +177,13 @@ void Level::ReloadShaderProgram()
 
 	if (shader)
 		delete shader;
-
+	if (normal_shader)
+		delete normal_shader;
 	std::stringstream v;
 	std::stringstream f;
+	std::stringstream nv;
+	std::stringstream nf;
+	std::stringstream ng;
 
 	std::ifstream file("data/shaders/vert.vert");
 
@@ -183,8 +196,18 @@ void Level::ReloadShaderProgram()
 	file.open("data/shaders/frag.frag");
 	f << file.rdbuf();
 	file.close();
+	file.open("data/shaders/vert_n.vert");
+	nv << file.rdbuf();
+	file.close();
+	file.open("data/shaders/frag_n.frag");
+	nf << file.rdbuf();
+	file.close();
+	file.open("data/shaders/geom_n.geo");
+	ng << file.rdbuf();
+	file.close();
 
 	shader = new cg::Program(v.str().c_str(), f.str().c_str());
+	normal_shader = new cg::Program(nv.str().c_str(), nf.str().c_str(), ng.str().c_str());
 }
 
 void Level::RotateCamX(float angle)
@@ -232,7 +255,7 @@ void Level::Render(Model* obj)
 
 	//Send view matrix to the shader
 	shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
-
+	normal_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
 	//draw
 	glDrawArrays(GL_TRIANGLES, 0, obj->points.size());
 	glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -240,7 +263,7 @@ void Level::Render(Model* obj)
 }
 
 
-Level::Level(): window (nullptr), shader(nullptr)
+Level::Level() : window(nullptr), shader(nullptr), normal_shader(nullptr)
 {
 
 }
@@ -261,8 +284,5 @@ void Level::KeyCheck()
 	if (key.W == GLFW_PRESS || key.W == GLFW_REPEAT) ptr->RotateCamX(-1);
 	if (key.S == GLFW_PRESS || key.S == GLFW_REPEAT) ptr->RotateCamX(1);
 	if (key.Q == GLFW_PRESS || key.Q == GLFW_REPEAT) ptr->ZoomCamZ(-1);
-	if (key.E == GLFW_PRESS || key.E == GLFW_REPEAT) ptr->ZoomCamZ(1); 
-	if (key.N == GLFW_PRESS || key.N == GLFW_REPEAT);
-	if (key.T == GLFW_PRESS || key.T == GLFW_REPEAT);
-	if (key.F == GLFW_PRESS || key.F == GLFW_REPEAT);
+	if (key.E == GLFW_PRESS || key.E == GLFW_REPEAT) ptr->ZoomCamZ(1);
 }

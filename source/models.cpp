@@ -216,6 +216,46 @@ Model::~Model()
 	glDeleteVertexArrays(1, &VAO);
 }
 
+void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
+{
+	std::vector<glm::vec3> tempN;
+
+	for (int i = 0; i < vi.size(); i += 3)
+	{
+		glm::vec3 v1 = v[vi[i]];
+		glm::vec3 v2 = v[vi[i + 1]];
+		glm::vec3 v3 = v[vi[i + 2]];
+
+		glm::vec3 normal = glm::normalize(glm::cross(v1 - v2, v2 - v3));
+
+		for (int j = 0; j < 3; j++)
+		{
+			tempN.push_back(normal);
+		}
+	}
+
+	if (Level::GetPtr()->normalAvg)
+	{
+		std::vector<glm::vec3> vertexNSum(v.size());
+		std::vector<int> vertexNCount(v.size());
+
+		for (int i = 0; i < vi.size(); i++)
+		{
+			vertexNSum[vi[i]] += tempN[i];
+			vertexNCount[vi[i]]++;
+		}
+
+		for (int i = 0; i < vi.size(); i++)
+		{
+			normals.push_back(vertexNSum[vi[i]] / (float)vertexNCount[vi[i]]);
+		}
+	}
+	else
+	{
+		normals = tempN;
+	}
+}
+
 //TODO:
 void Model::CreateModelPlane()
 {
@@ -298,6 +338,7 @@ void Model::CreateModelPlane()
 
 void Model::CreateModelCube()
 {
+	Level* ptr = Level::GetPtr();
 	//TODO: Points
 	//버텍스
 	float size = 0.5f;
@@ -320,39 +361,59 @@ void Model::CreateModelCube()
 		glm::vec3(0, -1, 0), // 아래
 	};
 	std::vector<glm::vec2> Cube_TexCoord = {
-		{ 0.0f, 0.0f },
-		{ 1.0f, 0.0f },
-		{ 1.0f, 1.0f },
-		{ 0.0f, 0.0f },
-		{ 1.0f, 1.0f },
-		{ 0.0f, 1.0f },
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 1.0f),
+
+		glm::vec2(0.0f, 1.0f),
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(0.0f, 1.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 1.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(0.0f, 1.0f),
+		glm::vec2(0.0f, 0.0f),
 	};
 
 	std::vector<int> Vertex_Indexs
 	{
 		1, 0, 3, 1, 3, 2,// 뒷면
 		4, 5, 6, 4, 6, 7,// 앞면
-		0, 4, 7, 0, 7, 3,// 왼쪽
-		5, 1, 2, 5, 2, 6,// 오른쪽
+		3, 0, 4, 3, 4, 7,// 왼쪽
+		1, 2, 6, 1, 6, 5,// 오른쪽
 		6, 2, 3, 6, 3, 7,// 위
 		4, 0, 1, 4, 1, 5// 아래
 	};
-
+	 
 	//(vertex indexes)
 	int i = 0;
 	for (auto p : Vertex_Indexs)
 	{
 		//Load vertexes
 		points.push_back(Cube_Vertex[p]);
-		normals.push_back(Cube_Normal[int(i / 6)]);
 		// 각 면의 UV 좌표 설정
-		UV.push_back(Cube_TexCoord[i % 6]);
+		int coord = i % 6;
+		if (i >= 6 * 2 && i < 6 * 3)
+			coord = i % 6 + 6;
+		else if (i >= 6 * 3 && i < 6 * 4)
+			coord = i % 6 + 6 * 2;
+		UV.push_back(Cube_TexCoord[coord]);
 		i++;
 	}
+	GetNormal(Cube_Vertex, Vertex_Indexs);
 }
 
 void Model::CreateModelCone(int slices)
 {
+	Level* ptr = Level::GetPtr();
 	std::vector<glm::vec3> Cone_Vertex;
 	float r = 0.5f;
 	for (int i = 0; i < slices; i++) {
@@ -391,6 +452,7 @@ void Model::CreateModelCone(int slices)
 
 void Model::CreateModelCylinder(int slices)
 {
+	Level* ptr = Level::GetPtr();
 	std::vector<glm::vec3> Cylinder_Vertex;
 	float r = 0.5f;
 	for (int i = 0; i < slices * 2; i++) {

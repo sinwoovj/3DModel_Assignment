@@ -56,6 +56,18 @@ namespace cg
         }
     }
 
+    Program::Program(const char* sv, const char* sf, const char* sg)
+        : handle(0), linked(false)
+    {
+        if (sv && sf && sg && strlen(sv) && strlen(sf) && strlen(sg))
+        {
+            compileShader(sv, GL_VERTEX_SHADER);
+            compileShader(sf, GL_FRAGMENT_SHADER);
+            compileShader(sg, GL_GEOMETRY_SHADER);
+            link();
+        }
+    }
+
     Program::~Program()
     {
         if (!handle || !linked)

@@ -61,32 +61,12 @@ private:
 		TODO: TRIGGER NORMALS AVERAGE
 		 F - Average Normals On/Off
 		*/
-		int Z = GLFW_RELEASE;
-		int X = GLFW_RELEASE;
-		int M = GLFW_RELEASE;
-		int T = GLFW_RELEASE;
-		int N = GLFW_RELEASE;
-		int F = GLFW_RELEASE;
-
-		void init(int v)
-		{
-			W = v;
-			A = v;
-			S = v;
-			D = v;
-			Q = v;
-			E = v;
-			Z = v;
-			X = v;
-			M = v;
-			T = v;
-			N = v;
-			F = v;
-		}
 	};
 	void KeyCheck();
 public:
 	KeyState key;
+	bool showNormal = false;
+	bool normalAvg = false; // false : face, true : averaged
 private:
 	//camera 
 	struct Camera
@@ -108,5 +88,6 @@ private:
 
 	//shaders
 	cg::Program* shader;
+	cg::Program* normal_shader;
 };
 
