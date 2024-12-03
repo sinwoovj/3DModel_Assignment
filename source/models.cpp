@@ -247,7 +247,7 @@ void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
 
 		for (int i = 0; i < vi.size(); i++)
 		{
-			normals.push_back(vertexNSum[vi[i]] / (float)vertexNCount[vi[i]]);
+			normals.push_back(glm::normalize(vertexNSum[vi[i]] / (float)vertexNCount[vi[i]]));
 		}
 	}
 	else
@@ -433,21 +433,33 @@ void Model::CreateModelCone(int slices)
 		glm::vec3 pres = Cone_Vertex[prsc];
 		glm::vec3 next = Cone_Vertex[ntsc];
 
-		points.push_back(pres);
-		normals.push_back({glm::cross(glm::vec3(tb - pres),
-			glm::vec3(next - pres)) });
-		UV.push_back({ float(prsc) / slices, 0 });
-
-		points.push_back(tb);
-		normals.push_back({glm::cross(glm::vec3(pres - tb),
-			glm::vec3(next - tb)) });
-		UV.push_back({(float(prsc) + 0.5f) / slices, int(i / slices) });
-
-		points.push_back(next);
-		normals.push_back({ glm::cross(glm::vec3(tb - next),
-			glm::vec3(pres - next)) });
-		UV.push_back({ float(ntsc) / slices, 0 });
+		
+		if (!int(i / slices))
+		{
+			points.push_back(pres);
+			points.push_back(next);
+			points.push_back(tb);
+			UV.push_back({ float(prsc) / slices, 0 });
+			UV.push_back({ float(ntsc) / slices, 0 });
+			UV.push_back({ (float(prsc) + 0.5f) / slices, int(i / slices) });
+			Vertex_Indexs.push_back(prsc);
+			Vertex_Indexs.push_back(ntsc);
+			Vertex_Indexs.push_back(int(i / slices) + slices);
+		}
+		else
+		{
+			points.push_back(pres);
+			points.push_back(tb);
+			points.push_back(next);
+			UV.push_back({ float(prsc) / slices, 0 });
+			UV.push_back({ (float(prsc) + 0.5f) / slices, int(i / slices) });
+			UV.push_back({ float(ntsc) / slices, 0 });
+			Vertex_Indexs.push_back(prsc);
+			Vertex_Indexs.push_back(int(i / slices) + slices);
+			Vertex_Indexs.push_back(ntsc);
+		}
 	}
+	GetNormal(Cone_Vertex, Vertex_Indexs);
 }
 
 void Model::CreateModelCylinder(int slices)
@@ -474,36 +486,50 @@ void Model::CreateModelCylinder(int slices)
 		glm::vec3 pres = Cylinder_Vertex[prsc];
 		glm::vec3 next = Cylinder_Vertex[ntsc];
 
-		points.push_back(pres);
-		normals.push_back({ glm::cross(glm::vec3(tb - pres),
-			glm::vec3(next - pres)) });
-		UV.push_back({ float(prscuv) / slices, int(i / slices) });
-
-		points.push_back(tb);
-		normals.push_back({ glm::cross(glm::vec3(pres - tb),
-			glm::vec3(next - tb)) });
-		UV.push_back({ float(prscuv) / slices, int(i / slices) });
-
-		points.push_back(next);
-		normals.push_back({ glm::cross(glm::vec3(tb - next),
-			glm::vec3(pres - next)) });
-		UV.push_back({ float(ntscuv) / slices, int(i / slices) });
-
-		points.push_back(pres);
-		normals.push_back({ glm::cross(glm::vec3(tb - pres),
-			glm::vec3(next - pres)) });
-		UV.push_back({ float(prscuv) / slices, int(i / slices) });
-
-		points.push_back(Cylinder_Vertex[int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices]);
-		normals.push_back({ glm::cross(glm::vec3(pres - tb),
-			glm::vec3(next - tb)) });
-		UV.push_back({ (int(i / slices) == 0 ? float(prscuv): float(ntscuv)) / slices, int(i / slices) == 0 ? 1 : 0 });
-
-		points.push_back(next);
-		normals.push_back({ glm::cross(glm::vec3(tb - next),
-			glm::vec3(pres - next)) });
-		UV.push_back({ float(ntscuv) / slices, int(i / slices) });
+		if (!int(i / slices))
+		{
+			points.push_back(pres);
+			points.push_back(next);
+			points.push_back(tb);
+			points.push_back(pres);
+			points.push_back(Cylinder_Vertex[int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices]);
+			points.push_back(next);
+			UV.push_back({ float(prscuv) / slices, int(i / slices) });
+			UV.push_back({ float(ntscuv) / slices, int(i / slices) });
+			UV.push_back({ float(prscuv) / slices, int(i / slices) });
+			UV.push_back({ float(prscuv) / slices, int(i / slices) });
+			UV.push_back({ (int(i / slices) == 0 ? float(prscuv) : float(ntscuv)) / slices, int(i / slices) == 0 ? 1 : 0 });
+			UV.push_back({ float(ntscuv) / slices, int(i / slices) });
+			Vertex_Indexs.push_back(prsc);
+			Vertex_Indexs.push_back(ntsc);
+			Vertex_Indexs.push_back(int(i / slices) + slices * 2);
+			Vertex_Indexs.push_back(prsc);
+			Vertex_Indexs.push_back(int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices);
+			Vertex_Indexs.push_back(ntsc);
+		}
+		else
+		{
+			points.push_back(pres);
+			points.push_back(tb);
+			points.push_back(next);
+			points.push_back(pres);
+			points.push_back(next);
+			points.push_back(Cylinder_Vertex[int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices]);
+			UV.push_back({ float(prscuv) / slices, int(i / slices) });
+			UV.push_back({ float(prscuv) / slices, int(i / slices) });
+			UV.push_back({ float(ntscuv) / slices, int(i / slices) });
+			UV.push_back({ float(prscuv) / slices, int(i / slices) });
+			UV.push_back({ float(ntscuv) / slices, int(i / slices) });
+			UV.push_back({ (int(i / slices) == 0 ? float(prscuv) : float(ntscuv)) / slices, int(i / slices) == 0 ? 1 : 0 });
+			Vertex_Indexs.push_back(prsc);
+			Vertex_Indexs.push_back(int(i / slices) + slices * 2);
+			Vertex_Indexs.push_back(ntsc);
+			Vertex_Indexs.push_back(prsc);
+			Vertex_Indexs.push_back(ntsc);
+			Vertex_Indexs.push_back(int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices);
+		}
 	}
+	GetNormal(Cylinder_Vertex, Vertex_Indexs);
 }
 
 void Model::CreateModelSphere(int slices)
