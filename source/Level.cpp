@@ -77,7 +77,7 @@ int Level::Initialize()
 
 void Level::Run()
 {
-	glClearColor(1, 1, 1, 1);
+	glClearColor(0, 0, 0, 1);
 	// Main loop
 	while (!glfwWindowShouldClose(window)) 
 	{	
@@ -265,5 +265,4 @@ void Level::KeyCheck()
 	if (key.N == GLFW_PRESS || key.N == GLFW_REPEAT);
 	if (key.T == GLFW_PRESS || key.T == GLFW_REPEAT);
 	if (key.F == GLFW_PRESS || key.F == GLFW_REPEAT);
-	if (key.M == GLFW_PRESS || key.M == GLFW_REPEAT);
 }

@@ -391,184 +391,56 @@ void Model::CreateModelCone(int slices)
 
 void Model::CreateModelCylinder(int slices)
 {
-	//TODO: Points
-	//버텍스
-	std::vector<float> Cylinder_Vertex =
-	{
-		0.0f, 0.5f, 0.0f
-	};
+	std::vector<glm::vec3> Cylinder_Vertex;
 	float r = 0.5f;
-	for (int i = 0; i < slices; i++) {
-		float angle = 2.0f * glm::pi<float>() * i / slices;
-		Cylinder_Vertex.push_back(r * cos(angle));
-		Cylinder_Vertex.push_back(0.5f);
-		Cylinder_Vertex.push_back(r * sin(angle));
+	for (int i = 0; i < slices * 2; i++) {
+		float angle = 2.0f * glm::pi<float>() * (i % slices) / slices;
+		Cylinder_Vertex.push_back({ r * cos(angle),	int(i /slices) - 0.5f	,r * sin(angle)});
 	}
-	for (int i = 0; i < slices; i++) {
-		float angle = 2.0f * glm::pi<float>() * i / slices;
-		Cylinder_Vertex.push_back(r * cos(angle));
-		Cylinder_Vertex.push_back(-0.5f);
-		Cylinder_Vertex.push_back(r * sin(angle));
-	}
-	Cylinder_Vertex.push_back(0.0f);
-	Cylinder_Vertex.push_back(-0.5f);
-	Cylinder_Vertex.push_back(0.0f);
+	Cylinder_Vertex.push_back({ 0.0f, -0.5f, 0.0f }); //Bottom
+	Cylinder_Vertex.push_back({ 0.0f,  0.5f, 0.0f }); //Top
 
-	std::vector<float> Cylinder_Normal;
-	for (int i = 0; i < (slices + 1) * 2; i++) {
-		Cylinder_Normal.push_back(0.0f);
-		Cylinder_Normal.push_back(0.0f);
-		Cylinder_Normal.push_back(1.0f);
-	}
-	std::vector<float> Cylinder_TexCoord;
-	// 윗면 중심점 추가 (UV: 중심)
-	Cylinder_TexCoord.push_back(0.5f); // U
-	Cylinder_TexCoord.push_back(0.5f); // V
-
-	// 윗면 주변 점 (UV: 원의 중심을 기준으로 배치)
-	for (int i = 0; i < slices; i++) {
-		float angle = 2.0f * glm::pi<float>() * i / slices;
-		float u = 0.5f + 0.5f * cos(angle); // U
-		float v = 0.5f + 0.5f * sin(angle); // V
-		Cylinder_TexCoord.push_back(u);
-		Cylinder_TexCoord.push_back(v);
-	}
-
-	// 옆면 (UV: 펼쳤을 때 직사각형 형태로 매핑)
-	for (int i = 0; i < slices; i++) {
-		float angle = 2.0f * glm::pi<float>() * i / slices;
-		float u = static_cast<float>(i) / slices; // U: 각도를 기준으로 균등 배치
-
-		// 윗면 정점 UV
-		Cylinder_TexCoord.push_back(u);    // U
-		Cylinder_TexCoord.push_back(1.0f); // V: 윗면
-
-		// 아랫면 정점 UV
-		Cylinder_TexCoord.push_back(u);    // U
-		Cylinder_TexCoord.push_back(0.0f); // V: 아랫면
-	}
-
-	// 아랫면 중심점 추가 (UV: 중심)
-	Cylinder_TexCoord.push_back(0.5f); // U
-	Cylinder_TexCoord.push_back(0.5f); // V
-
-	// 아랫면 주변 점 (UV: 원의 중심을 기준으로 배치)
-	for (int i = 0; i < slices; i++) {
-		float angle = 2.0f * glm::pi<float>() * i / slices;
-		float u = 0.5f + 0.5f * cos(angle); // U
-		float v = 0.5f + 0.5f * sin(angle); // V
-		Cylinder_TexCoord.push_back(u);
-		Cylinder_TexCoord.push_back(v);
-	}
 	//인덱스
 	std::vector<int> Vertex_Indexs;
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Vertex_Indexs.push_back(0);  // 꼭짓점
-		Vertex_Indexs.push_back(1 + i); // 현재 밑면 정점
-		Vertex_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Vertex_Indexs.push_back(i+1);  // 꼭짓점
-		Vertex_Indexs.push_back(i + 1 + slices); // 현재 밑면 정점
-		Vertex_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
-		Vertex_Indexs.push_back(i + 1);  // 꼭짓점
-		Vertex_Indexs.push_back(next + 1); // 현재 밑면 정점
-		Vertex_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
-	}
-	for (int i = slices; i < slices*2; i++) {
-		int next = (i + 1) % (slices)+slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Vertex_Indexs.push_back(slices*2 + 1);      // 밑면 첫 정점
-		Vertex_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Vertex_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-
-	std::vector<int> Normal_Indexs;
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Normal_Indexs.push_back(0);  // 꼭짓점
-		Normal_Indexs.push_back(1 + i); // 현재 밑면 정점
-		Normal_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Normal_Indexs.push_back(i + 1);  // 꼭짓점
-		Normal_Indexs.push_back(i + 1 + slices); // 현재 밑면 정점
-		Normal_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
-		Normal_Indexs.push_back(i + 1);  // 꼭짓점
-		Normal_Indexs.push_back(next + 1); // 현재 밑면 정점
-		Normal_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
-	}
-	for (int i = slices; i < slices * 2; i++) {
-		int next = (i + 1) % (slices)+slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Normal_Indexs.push_back(slices * 2 + 1);      // 밑면 첫 정점
-		Normal_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Normal_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	std::vector<int> Texcoords_Indexs;
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Texcoords_Indexs.push_back(0);  // 꼭짓점
-		Texcoords_Indexs.push_back(1 + i); // 현재 밑면 정점
-		Texcoords_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	for (int i = 0; i < slices; i++) {
-		int next = (i + 1) % slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Texcoords_Indexs.push_back(i + 1);  // 꼭짓점
-		Texcoords_Indexs.push_back(i + 1 + slices); // 현재 밑면 정점
-		Texcoords_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
-		Texcoords_Indexs.push_back(i + 1);  // 꼭짓점
-		Texcoords_Indexs.push_back(next + 1); // 현재 밑면 정점
-		Texcoords_Indexs.push_back(next + 1 + slices); // 다음 밑면 정점
-	}
-	for (int i = slices; i < slices * 2; i++) {
-		int next = (i + 1) % (slices) + slices; // 마지막 정점 다음은 첫 번째 정점으로
-		Texcoords_Indexs.push_back(slices * 2 + 1);      // 밑면 첫 정점
-		Texcoords_Indexs.push_back(1 + i);  // 현재 밑면 정점
-		Texcoords_Indexs.push_back(1 + next); // 다음 밑면 정점
-	}
-	//TODO: UVs
-
-	//TODO: Normals
-
-	std::vector<glm::vec3> temp;
-	std::vector<glm::vec3> tempN;
-	std::vector<glm::vec2> tempUV;
-
-	//Save mesh points
-	for (int i = 0; i < Cylinder_Vertex.size(); i += 3)
+	for (int i = 0; i < slices * 2; i++)
 	{
-		temp.push_back({ Cylinder_Vertex[i], Cylinder_Vertex[i + 1], Cylinder_Vertex[i + 2] });
-	}
+		int prscuv = i % slices;
+		int ntscuv = (i + 1) % slices;
+		int prsc = i % slices + int(i/slices) * slices;
+		int ntsc = (i + 1) % slices + int(i / slices) * slices;
+		glm::vec3 tb = Cylinder_Vertex[int(i / slices) + slices*2];
+		glm::vec3 pres = Cylinder_Vertex[prsc];
+		glm::vec3 next = Cylinder_Vertex[ntsc];
 
-	//Save mesh normals
-	for (int i = 0; i < Cylinder_Normal.size(); i += 3)
-	{
-		tempN.push_back({ Cylinder_Normal[i], Cylinder_Normal[i + 1], Cylinder_Normal[i + 2] });
-	}
+		points.push_back(pres);
+		normals.push_back({ glm::cross(glm::vec3(tb - pres),
+			glm::vec3(next - pres)) });
+		UV.push_back({ float(prscuv) / slices, int(i / slices) });
 
-	//Save UV
-	for (int i = 0; i + 1 < Cylinder_TexCoord.size(); i += 2)
-	{
-		tempUV.push_back({ Cylinder_TexCoord[i], Cylinder_TexCoord[i + 1] });
-	}
+		points.push_back(tb);
+		normals.push_back({ glm::cross(glm::vec3(pres - tb),
+			glm::vec3(next - tb)) });
+		UV.push_back({ float(prscuv) / slices, int(i / slices) });
 
-	//(vertex indexes)
-	for (auto p : Vertex_Indexs)
-	{
-		//Load vertexes
-		points.push_back(temp[p]);
-	}
-	for (auto p : Normal_Indexs)
-	{
-		//Load Normals
-		normals.push_back(tempN[p]);
-	}
-	for (auto p : Texcoords_Indexs)
-	{
-		//Load Indexes
-		UV.push_back(tempUV[p]);
+		points.push_back(next);
+		normals.push_back({ glm::cross(glm::vec3(tb - next),
+			glm::vec3(pres - next)) });
+		UV.push_back({ float(ntscuv) / slices, int(i / slices) });
+
+		points.push_back(pres);
+		normals.push_back({ glm::cross(glm::vec3(tb - pres),
+			glm::vec3(next - pres)) });
+		UV.push_back({ float(prscuv) / slices, int(i / slices) });
+
+		points.push_back(Cylinder_Vertex[int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices]);
+		normals.push_back({ glm::cross(glm::vec3(pres - tb),
+			glm::vec3(next - tb)) });
+		UV.push_back({ (int(i / slices) == 0 ? float(prscuv): float(ntscuv)) / slices, int(i / slices) == 0 ? 1 : 0 });
+
+		points.push_back(next);
+		normals.push_back({ glm::cross(glm::vec3(tb - next),
+			glm::vec3(pres - next)) });
+		UV.push_back({ float(ntscuv) / slices, int(i / slices) });
 	}
 }
 

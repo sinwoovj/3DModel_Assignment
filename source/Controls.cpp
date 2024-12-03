@@ -41,11 +41,16 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
         ptr->key.T = action;
     if (key == GLFW_KEY_F)
         ptr->key.F = action;
-    if (key == GLFW_KEY_M)
-        ptr->key.M = action;
+    
 
     if (action == GLFW_PRESS)
     {
+        if (key == GLFW_KEY_M)
+        {
+            static bool polyState = false;
+            polyState = !polyState;
+            glPolygonMode(GL_FRONT_AND_BACK, polyState ? GL_LINE : GL_FILL);
+        }
         if (key == GLFW_KEY_Z)
         {
             if (Model::slices > 3) Model::slices--;
