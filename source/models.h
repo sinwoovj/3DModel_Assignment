@@ -2,6 +2,15 @@
 
 #include "CS300Parser.h"
 #include "Level.h"
+
+struct Vec3Compare {
+	bool operator()(const glm::vec3& a, const glm::vec3& b) const {
+		if (a.x != b.x) return a.x < b.x;
+		if (a.y != b.y) return a.y < b.y;
+		return a.z < b.z;
+	}
+};
+
 struct Model
 {
 	CS300Parser::Transform transf;

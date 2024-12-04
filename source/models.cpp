@@ -5,6 +5,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <set>
+
 
 //#define TINYOBJLOADER_IMPLEMENTATION
 #include "../extern/tiny_obj_loader.h"
@@ -237,12 +239,16 @@ void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
 	if (Level::GetPtr()->normalAvg)
 	{
 		std::vector<glm::vec3> vertexNSum(v.size());
+		std::vector<std::set<glm::vec3, Vec3Compare>> vertexNSet(v.size());
 		std::vector<int> vertexNCount(v.size());
 
 		for (int i = 0; i < vi.size(); i++)
 		{
-			vertexNSum[vi[i]] += tempN[i];
-			vertexNCount[vi[i]]++;
+			if (vertexNSet[vi[i]].insert(tempN[i]).second)
+			{
+				vertexNSum[vi[i]] += tempN[i];
+				vertexNCount[vi[i]]++;
+			}
 		}
 
 		for (int i = 0; i < vi.size(); i++)
