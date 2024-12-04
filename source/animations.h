@@ -36,7 +36,7 @@ class Anim
         param(p) {}
 
     glm::vec3 Update(const glm::vec3 & pos, float time) const;
-
+    void AnimUpdate(Anim param, const glm::vec3& pos, float time);
   private:
     AnimUpdater updater;
     glm::vec3   param;

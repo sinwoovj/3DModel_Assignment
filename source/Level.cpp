@@ -4,6 +4,7 @@
 #include "CS300Parser.h"
 #include "Controls.h"
 #include "models.h"
+#include <chrono>
 
 #include <GLFW/glfw3.h>
 #include <GL/GL.h>
@@ -44,7 +45,7 @@ int Level::Initialize()
 
 	//Load Scene
 	CS300Parser parser;
-	parser.LoadDataFromFile("data/scenes/scene_A0.txt");
+	parser.LoadDataFromFile("data/scenes/scene_A1.txt");
 
 	//Convert from parser->obj to Model
 	for (auto o : parser.objects)
@@ -77,6 +78,9 @@ int Level::Initialize()
 
 void Level::Run()
 {
+	static float time = 0;
+	using clock = std::chrono::high_resolution_clock; // 높은 해상도의 시계 사용
+	auto lastTime = clock::now();
 	glClearColor(0, 0, 0, 1);
 	// Main loop
 	while (!glfwWindowShouldClose(window)) 
@@ -118,9 +122,22 @@ void Level::Run()
 		//The image is mirrored on X
 		cam.ProjMat = glm::perspective(glm::radians(cam.fovy), cam.width / cam.height, cam.nearPlane, cam.farPlane);
 
+		auto currentTime = clock::now();
+		std::chrono::duration<float> deltaTime = currentTime - lastTime;
+		lastTime = currentTime;
+		time += deltaTime.count();
 		//For each object in the level
 		for (auto o : allObjects)
 		{
+			glm::vec3 temp = o->transf.st_pos;
+
+			//Animation Update
+			for (auto anim : o->transf.anims)
+			{
+				temp = anim.Update(temp, time);
+			}
+			o->transf.pos = temp;
+
 			//Render the object
 			Render(o);
 		}
@@ -288,11 +305,13 @@ Level::~Level()
 
 void Level::KeyCheck()
 {
+	float speed = 1.0f;
+
 	//W,A,S,D,Q,E - CAMERA CONTROL
-	if (key.A == GLFW_PRESS || key.A == GLFW_REPEAT) ptr->RotateCamY(1);
-	if (key.D == GLFW_PRESS || key.D == GLFW_REPEAT) ptr->RotateCamY(-1);
-	if (key.W == GLFW_PRESS || key.W == GLFW_REPEAT) ptr->RotateCamX(-1);
-	if (key.S == GLFW_PRESS || key.S == GLFW_REPEAT) ptr->RotateCamX(1);
-	if (key.Q == GLFW_PRESS || key.Q == GLFW_REPEAT) ptr->ZoomCamZ(-1);
-	if (key.E == GLFW_PRESS || key.E == GLFW_REPEAT) ptr->ZoomCamZ(1);
+	if (key.A == GLFW_PRESS || key.A == GLFW_REPEAT) ptr->RotateCamY(speed);
+	if (key.D == GLFW_PRESS || key.D == GLFW_REPEAT) ptr->RotateCamY(-speed);
+	if (key.W == GLFW_PRESS || key.W == GLFW_REPEAT) ptr->RotateCamX(-speed);
+	if (key.S == GLFW_PRESS || key.S == GLFW_REPEAT) ptr->RotateCamX(speed);
+	if (key.Q == GLFW_PRESS || key.Q == GLFW_REPEAT) ptr->ZoomCamZ(-speed);
+	if (key.E == GLFW_PRESS || key.E == GLFW_REPEAT) ptr->ZoomCamZ(speed);
 }

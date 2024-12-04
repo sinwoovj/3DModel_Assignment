@@ -110,6 +110,7 @@ void CS300Parser::LoadDataFromFile(const char * filename)
                 if (objects.size() > 0)
                 {
                     objects.back().pos = pos;
+                    objects.back().st_pos = pos;
                 }
             }
             else if (last == LastAdded::LIGHT)
@@ -117,6 +118,7 @@ void CS300Parser::LoadDataFromFile(const char * filename)
                 if (lights.size() > 0)
                 {
                     lights.back().pos = pos;
+                    lights.back().st_pos = pos;
                 }
             }
         }
