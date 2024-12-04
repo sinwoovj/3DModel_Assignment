@@ -167,6 +167,19 @@ Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO
 	//load points
 	LoadModel();
 	
+	CreateTexobj();
+
+	InitVertexArray();
+}
+
+Model::~Model()
+{
+	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO);
+}
+
+void Model::InitVertexArray()
+{
 	int s = points.size();
 	//vertices
 	for (int i = 0; i < s; i++)
@@ -194,7 +207,7 @@ Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * (sizeof(float)), &vertices[0], GL_STATIC_DRAW);
 
 	//Gen VAO
-	
+
 	//Assign Coordinates
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -202,22 +215,60 @@ Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO
 	glEnableVertexAttribArray(0);
 
 	//Assign Normals
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	//Assign UV
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 }
 
-Model::~Model()
+void Model::CreateTexobj()
 {
-	glDeleteBuffers(1, &VBO);
-	glDeleteVertexArrays(1, &VAO);
+	const int width = 6;
+	const int height = 6;
+
+	glm::vec3 colors[] = {
+		glm::vec3(0, 0, 1),   // Blue
+		glm::vec3(0, 1, 1),   // Cyan
+		glm::vec3(0, 1, 0),   // Green
+		glm::vec3(1, 1, 0),   // Yellow
+		glm::vec3(1, 0, 0),   // Red
+		glm::vec3(1, 0, 1)    // Purple
+	};
+
+	unsigned char* data = new unsigned char[width * height * 3 * 4];
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int colorIdx = (x + (height - 1 - y)) % 6;
+
+			for (int py = 0; py < 2; py++)
+			{
+				for (int px = 0; px < 2; px++)
+				{
+					int idx = ((y * 2 + py) * width * 2 + (x * 2 + px)) * 3;
+					data[idx] = colors[colorIdx].r * 255;
+					data[idx + 1] = colors[colorIdx].g * 255;
+					data[idx + 2] = colors[colorIdx].b * 255;
+				}
+			}
+		}
+	}
+
+	glGenTextures(1, &texobj);
+	glBindTexture(GL_TEXTURE_2D, texobj);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width * 2, height * 2, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);
+
+	delete[] data;
 }
 
 void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)

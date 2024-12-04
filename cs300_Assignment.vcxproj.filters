@@ -1366,5 +1366,10 @@
     <None Include="extern\glm\gtx\wrap.inl">
       <Filter>헤더 파일</Filter>
     </None>
+    <None Include="data\shaders\vert_n.vert" />
+    <None Include="data\shaders\frag.frag" />
+    <None Include="data\shaders\frag_n.frag" />
+    <None Include="data\shaders\geom_n.geo" />
+    <None Include="data\shaders\vert.vert" />
   </ItemGroup>
 </Project>

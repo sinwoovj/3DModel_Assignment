@@ -67,6 +67,7 @@ public:
 	KeyState key;
 	bool showNormal = false;
 	bool normalAvg = false; // false : face, true : averaged
+	bool texture;
 private:
 	//camera 
 	struct Camera

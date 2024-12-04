@@ -62,8 +62,8 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
         }
         if (key == GLFW_KEY_N)
             ptr->showNormal = !ptr->showNormal;
-        /*if (key  == GLFW_KEY_T)
-            ptr->key.T = action;*/
+        if (key == GLFW_KEY_T)
+            ptr->texture = !ptr->texture;
         if (key == GLFW_KEY_F)
         {
             ptr->normalAvg = !ptr->normalAvg;

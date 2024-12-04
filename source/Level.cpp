@@ -256,6 +256,16 @@ void Level::Render(Model* obj)
 	//Send view matrix to the shader
 	shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
 	normal_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
+
+	shader->setUniform("useTexture", texture);
+	shader->setUniform("tex", 6);
+
+	if (texture)
+	{
+		glBindTextureUnit(6, obj->texobj);
+		glBindTexture(GL_TEXTURE_2D, obj->texobj);
+	}
+
 	//draw
 	glDrawArrays(GL_TRIANGLES, 0, obj->points.size());
 	glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -263,7 +273,7 @@ void Level::Render(Model* obj)
 }
 
 
-Level::Level() : window(nullptr), shader(nullptr), normal_shader(nullptr)
+Level::Level() : window(nullptr), shader(nullptr), normal_shader(nullptr), texture(false)
 {
 
 }
