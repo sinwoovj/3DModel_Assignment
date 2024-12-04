@@ -11,6 +11,8 @@
 //#define TINYOBJLOADER_IMPLEMENTATION
 #include "../extern/tiny_obj_loader.h"
 
+#include <numeric>
+
 
 int Model::slices = 4;
 
@@ -238,22 +240,16 @@ void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
 
 	if (Level::GetPtr()->normalAvg)
 	{
-		std::vector<glm::vec3> vertexNSum(v.size());
 		std::vector<std::set<glm::vec3, Vec3Compare>> vertexNSet(v.size());
-		std::vector<int> vertexNCount(v.size());
 
 		for (int i = 0; i < vi.size(); i++)
 		{
-			if (vertexNSet[vi[i]].insert(tempN[i]).second)
-			{
-				vertexNSum[vi[i]] += tempN[i];
-				vertexNCount[vi[i]]++;
-			}
+			vertexNSet[vi[i]].insert(tempN[i]);
 		}
 
 		for (int i = 0; i < vi.size(); i++)
 		{
-			normals.push_back(glm::normalize(vertexNSum[vi[i]] / (float)vertexNCount[vi[i]]));
+			normals.push_back(glm::normalize(std::accumulate(vertexNSet[vi[i]].begin(), vertexNSet[vi[i]].end(), glm::vec3(0.0f)) / (float)vertexNSet[vi[i]].size()));
 		}
 	}
 	else
@@ -540,9 +536,80 @@ void Model::CreateModelCylinder(int slices)
 
 void Model::CreateModelSphere(int slices)
 {
-	//TODO: Points
+	float height = 1.0f;
 
-	//TODO: UVs
+	std::vector<glm::vec3> temp = {
+		glm::vec3(0.0f, height / 2, 0.0f), // top
+		glm::vec3(0.0f, -height / 2, 0.0f), // bottom
+	};
 
-	//TODO: Normals
+	std::vector<int> indices;
+
+	constexpr float pi = glm::pi<float>();
+	float angleStep = 2 * pi / slices;
+	float fslices = (float)slices;
+
+	for (int i = 1; i < (slices / 2); i++)
+	{
+		float yPos = 0.5f * sinf((i * pi / (slices / 2)) - (pi / 2));
+		float befYPos = 0.5f * sinf(((i - 1) * pi / (slices / 2)) - (pi / 2));
+		float radius = sqrtf((0.5f * 0.5f) - (yPos * yPos));
+
+		for (int j = 0; j <= slices; j++)
+		{
+			if (j != slices)
+				temp.push_back(glm::vec3(radius * cosf(j * angleStep), yPos, radius * sinf(j * angleStep)));
+
+			if (j != 0)
+			{
+				if (i == 1) // triangle
+				{
+					indices.push_back(1);
+					indices.push_back(j + 1);
+					indices.push_back(j != slices ? j + 2 : 2);
+
+					UV.push_back(glm::vec2((j - 1) / fslices, 0.0f));
+					UV.push_back(glm::vec2((j - 1) / fslices, yPos + 0.5f));
+					UV.push_back(glm::vec2(j / fslices, yPos + 0.5f));
+				}
+
+				else
+				{
+					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
+					indices.push_back((i - 2) * slices + j + 1);
+					indices.push_back((i - 1) * slices + j + 1);
+
+					UV.push_back(glm::vec2(j / fslices, yPos + 0.5f));
+					UV.push_back(glm::vec2((j - 1) / fslices, befYPos + 0.5f));
+					UV.push_back(glm::vec2((j - 1) / fslices, yPos + 0.5f));
+
+					indices.push_back((i - 2) * slices + j + 1);
+					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
+					indices.push_back((i - 2) * slices + (j != slices ? j + 2 : 2));
+
+					UV.push_back(glm::vec2((j - 1) / fslices, befYPos + 0.5f));
+					UV.push_back(glm::vec2(j / fslices, yPos + 0.5f));
+					UV.push_back(glm::vec2(j / fslices, befYPos + 0.5f));
+				}
+
+				if (i == (slices / 2) - 1)
+				{
+					indices.push_back(0);
+					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
+					indices.push_back((i - 1) * slices + j + 1);
+
+					UV.push_back(glm::vec2((j - 1) / fslices, 1.f));
+					UV.push_back(glm::vec2(j / fslices, yPos + 0.5f));
+					UV.push_back(glm::vec2((j - 1) / fslices, yPos + 0.5f));
+				}
+			}
+		}
+	}
+
+	for (int i = 0; i < indices.size(); i++)
+	{
+		points.push_back(temp[indices[i]]);
+	}
+
+	GetNormal(temp, indices);
 }

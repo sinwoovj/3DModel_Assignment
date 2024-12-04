@@ -46,7 +46,7 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
         }
         if (key == GLFW_KEY_Z || key == GLFW_KEY_KP_SUBTRACT)
         {
-            if (Model::slices > 3) Model::slices--;
+            if (Model::slices > 4) Model::slices--;
             for (auto o : ptr->allObjects)
             {
                 o->InitModel();
