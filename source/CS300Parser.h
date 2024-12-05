@@ -29,10 +29,10 @@ class CS300Parser
         std::string mesh;
         std::string normalMap = "data/textures/default_normal.png";
 
-        glm::vec3 st_pos;
-        glm::vec3 pos;
-        glm::vec3 rot;
-        glm::vec3 sca;
+        glm::vec3 st_pos    = glm::vec3(0.0f);
+        glm::vec3 pos       = glm::vec3(0.0f);
+        glm::vec3 rot       = glm::vec3(0.0f);
+        glm::vec3 sca       = glm::vec3(1.0f);
         float     ns        = 10.0f;
         float     ior       = 1.33f;
         bool      reflector = false;
@@ -44,11 +44,11 @@ class CS300Parser
 
     struct Light
     {
-        glm::vec3 st_pos;
-        glm::vec3 pos;
-        glm::vec3 dir;
-        glm::vec3 col;
-        glm::vec3 att;
+        glm::vec3 st_pos  = glm::vec3(0.0f);
+        glm::vec3 pos     = glm::vec3(0.0f);
+        glm::vec3 col     = glm::vec3(0.0f);
+        glm::vec3 dir     = glm::vec3(0.0f);
+        glm::vec3 att     = glm::vec3(0.0f);
         float     amb     = 0.0f;
         float     inner   = 0.0f;
         float     outer   = 30.0f;
@@ -59,6 +59,23 @@ class CS300Parser
         std::string type = "POINT";
 
         std::vector<Animations::Anim> anims;
+
+        unsigned int lightingVAO;
+        unsigned int lightingVBO;
+
+        std::vector<glm::vec3> points;
+        std::vector<float> vertices;
+        std::vector<int> pointIndeces;
+
+        glm::mat4x4 ComputeMatrix();
+
+        Light();
+        ~Light();
+
+        void InitLight();
+
+        void CreateSphere(int slices);
+        void InitVertexArray();
     };
     std::vector<Light> lights;
 

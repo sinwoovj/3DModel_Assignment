@@ -165,8 +165,10 @@ void Model::InitModel()
 Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO(0), VAO(0)
 {
 	//load points
-	LoadModel();
+	InitModel();
 	
+	SetMaterial();
+
 	CreateTexobj();
 
 	InitVertexArray();
@@ -176,6 +178,11 @@ Model::~Model()
 {
 	glDeleteBuffers(1, &VBO);
 	glDeleteVertexArrays(1, &VAO);
+}
+
+void Model::SetMaterial()
+{
+	material.shininess = transf.ns;
 }
 
 void Model::InitVertexArray()
@@ -221,8 +228,8 @@ void Model::InitVertexArray()
 	//Assign UV
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
+	
 	glBindVertexArray(0);
-
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -334,15 +341,15 @@ void Model::CreateModelPlane()
 	};
 	//¿Œµ¶Ω∫
 	std::vector<int> Vertex_Indexs = {
-		2, 3, 0,
+		2, 0, 3,
 		2, 1, 0
 	};
 	std::vector<int> Normal_Indexs = {
-		2, 3, 0,
+		2, 0, 3,
 		2, 1, 0
 	};
 	std::vector<int> Texcoords_Indexs = {
-		2, 3, 0,
+		2, 0, 3,
 		2, 1, 0
 	};
 	//TODO: UVs

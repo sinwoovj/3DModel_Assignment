@@ -46,11 +46,16 @@ int Level::Initialize()
 	//Load Scene
 	CS300Parser parser;
 	parser.LoadDataFromFile("data/scenes/scene_A1.txt");
-
+	
 	//Convert from parser->obj to Model
 	for (auto o : parser.objects)
 	{
 		allObjects.push_back(new Model(o));
+	}
+	//Convert from parser->obj to Light
+	for (auto l : parser.lights)
+	{
+		allLights.push_back(new CS300Parser::Light(l));
 	}
 
 	//Save camera
@@ -150,6 +155,12 @@ void Level::Run()
 				Render(o);
 			}
 		}
+		bool showLighting = true;
+		if (showLighting)
+		{
+			Lighting();
+		}
+
 		glUseProgram(0);
 
 		glfwSwapBuffers(window);
@@ -194,10 +205,14 @@ void Level::ReloadShaderProgram()
 
 	if (shader)
 		delete shader;
+	if (lighting_shader)
+		delete lighting_shader;
 	if (normal_shader)
 		delete normal_shader;
 	std::stringstream v;
 	std::stringstream f;
+	std::stringstream lv;
+	std::stringstream lf;
 	std::stringstream nv;
 	std::stringstream nf;
 	std::stringstream ng;
@@ -213,6 +228,12 @@ void Level::ReloadShaderProgram()
 	file.open("data/shaders/frag.frag");
 	f << file.rdbuf();
 	file.close();
+	file.open("data/shaders/vert_l.vert");
+	lv << file.rdbuf();
+	file.close();
+	file.open("data/shaders/frag_l.frag");
+	lf << file.rdbuf();
+	file.close();
 	file.open("data/shaders/vert_n.vert");
 	nv << file.rdbuf();
 	file.close();
@@ -224,6 +245,7 @@ void Level::ReloadShaderProgram()
 	file.close();
 
 	shader = new cg::Program(v.str().c_str(), f.str().c_str());
+	lighting_shader = new cg::Program(lv.str().c_str(), lf.str().c_str());
 	normal_shader = new cg::Program(nv.str().c_str(), nf.str().c_str(), ng.str().c_str());
 }
 
@@ -260,6 +282,11 @@ void Level::AddObject(Model* model)
 	allObjects.push_back(model);
 }
 
+void Level::AddLights(CS300Parser::Light* light)
+{
+	allLights.push_back(light);
+}
+
 void Level::Render(Model* obj)
 {
 	//use obj VBO
@@ -271,11 +298,20 @@ void Level::Render(Model* obj)
 	glm::mat4x4 m2w = obj->ComputeMatrix();
 
 	//Send view matrix to the shader
-	shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
 	normal_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
-
+	shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
+	shader->setUniform("m2w", m2w);
 	shader->setUniform("useTexture", texture);
 	shader->setUniform("tex", 6);
+
+
+	//Material
+	// << type context here!! (p.s. ns means shiness)
+	shader->setUniform("material.emission", obj->material.emission);
+	shader->setUniform("material.ambient", obj->material.ambient);
+	shader->setUniform("material.diffuse", obj->material.diffuse);
+	shader->setUniform("material.specular", obj->material.specular);
+	shader->setUniform("material.shininess", obj->material.shininess);
 
 	if (texture)
 	{
@@ -289,8 +325,83 @@ void Level::Render(Model* obj)
 	glBindVertexArray(0);
 }
 
+void Level::Lighting()
+{
+	//lighting
+	struct LightSourceParameters
+	{
+		int type					= 0;
+		glm::vec4 ambient			= glm::vec4(0.0f);
+		glm::vec4 diffuse			= glm::vec4(0.0f);
+		glm::vec4 specular			= glm::vec4(0.0f);
+		glm::vec4 position			= glm::vec4(0.0f);
+		glm::vec3 spotDirection		= glm::vec3(0.0f);
+		float spotExponent			= 0;
+		float spotCutoff			= 0; // (range: [0.0,90.0], 180.0)
+		float spotCosCutoff			= 0; // (range: [1.0,0.0], -1.0)
+		float constantAttenuation	= 0;
+		float linearAttenuation		= 0;
+		float quadraticAttenuation	= 0;
+	};
 
-Level::Level() : window(nullptr), shader(nullptr), normal_shader(nullptr), texture(false)
+	glUseProgram(shader->handle);
+	int i = 0;
+	for (auto lgt : allLights)
+	{
+		LightSourceParameters light
+		{
+			lgt->type == "POINT" ? 0 : lgt->type == "SPOT" ? 1 : 2,	//type
+			glm::vec4(lgt->amb * lgt->col, 1),						//ambient
+			glm::vec4(),											//diffuse
+			glm::vec4(),											//specualr
+			glm::vec4(lgt->pos,1.0f),								//position
+			lgt->dir,												//spotDirection
+			lgt->falloff,											//spotExponent
+			lgt->inner,												//spotCutoff
+			lgt->outer,												//spotCosCutoff
+			lgt->att.x,												//constantAttenuation
+			lgt->att.y,												//linearAttenuation
+			lgt->att.z												//quadraticAttenuation
+		};
+		std::string lightName = "light[" + std::to_string(i) + "].";
+		shader->setUniform(lightName + "type", light.type);
+		shader->setUniform(lightName + "ambient", light.ambient);
+		shader->setUniform(lightName + "diffuse", light.diffuse);
+		shader->setUniform(lightName + "specular", light.specular);
+		shader->setUniform(lightName + "positionWorld", light.position);
+		shader->setUniform(lightName + "spotDirection", light.spotDirection);
+		shader->setUniform(lightName + "spotExponent", light.spotExponent);
+		shader->setUniform(lightName + "spotCutoff", light.spotCutoff);
+		shader->setUniform(lightName + "spotCosCutoff", light.spotCosCutoff);
+		shader->setUniform(lightName + "constantAttenuation", light.constantAttenuation);
+		shader->setUniform(lightName + "linearAttenuation", light.linearAttenuation);
+		shader->setUniform(lightName + "quadraticAttenuation", light.quadraticAttenuation);
+	}
+	shader->setUniform("activeCount", (int)allLights.size());
+
+	//visualize light obj
+	glUseProgram(lighting_shader->handle);
+	for (auto lgt : allLights)
+	{
+		//use obj VBO
+		glBindBuffer(GL_ARRAY_BUFFER, lgt->lightingVBO);
+		//use obj VAO
+		glBindVertexArray(lgt->lightingVAO);
+		//Send model matrix to the shader
+		glm::mat4x4 m2w = lgt->ComputeMatrix();
+
+		//Send view matrix to the shader
+		lighting_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
+
+		glDrawArrays(GL_TRIANGLES, 0, lgt->points.size());
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+	
+}
+
+
+Level::Level() : window(nullptr), shader(nullptr), lighting_shader(nullptr), normal_shader(nullptr), texture(false)
 {
 
 }
@@ -301,6 +412,11 @@ Level::~Level()
 		delete m;
 
 	allObjects.clear();
+
+	for (auto m : allLights)
+		delete m;
+
+	allLights.clear();
 }
 
 void Level::KeyCheck()

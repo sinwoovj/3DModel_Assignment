@@ -1,5 +1,7 @@
 #include "CS300Parser.h"
-
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <fstream>
 
@@ -291,4 +293,163 @@ void CS300Parser::LoadDataFromFile(const char * filename)
             }
         }
     }
+}
+
+glm::mat4x4 CS300Parser::Light::ComputeMatrix()
+{
+    glm::mat4 translate = glm::mat4(1.0f);
+    glm::mat4 scale = glm::mat4(1.0f);
+    glm::mat4 temp = glm::mat4(1.0f);
+
+    translate = glm::translate(translate, pos);
+    scale = glm::scale(scale, glm::vec3(5.0f));
+
+    temp = translate * scale;
+
+    return temp;
+}
+
+CS300Parser::Light::Light() : lightingVAO(0), lightingVBO(0)
+{
+    //load points
+    InitLight();
+
+    InitVertexArray();
+}
+
+CS300Parser::Light::~Light()
+{
+}
+
+void CS300Parser::Light::InitLight()
+{
+    glDeleteBuffers(1, &lightingVBO);
+    glDeleteVertexArrays(1, &lightingVAO);
+
+    points.clear();
+    vertices.clear();
+    pointIndeces.clear();
+
+    CreateSphere(8);
+    int s = points.size();
+    //vertices
+    for (int i = 0; i < s; i++)
+    {
+        //points
+        vertices.push_back(points[i].x);
+        vertices.push_back(points[i].y);
+        vertices.push_back(points[i].z);
+    }
+
+    //Sanity Check
+    if (vertices.size() == 0)
+        return;
+
+    //Gen VBO
+    glGenBuffers(1, &lightingVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, lightingVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * (sizeof(float)), &vertices[0], GL_STATIC_DRAW);
+
+    //Gen VAO
+    glGenVertexArrays(1, &lightingVAO);
+    glBindVertexArray(lightingVAO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void CS300Parser::Light::CreateSphere(int slices)
+{
+    float height = 1.0f;
+
+    std::vector<glm::vec3> temp = {
+        glm::vec3(0.0f, height / 2, 0.0f), // top
+        glm::vec3(0.0f, -height / 2, 0.0f), // bottom
+    };
+
+    std::vector<int> indices;
+
+    constexpr float pi = glm::pi<float>();
+    float angleStep = 2 * pi / slices;
+    float fslices = (float)slices;
+
+    for (int i = 1; i < (slices / 2); i++)
+    {
+        float yPos = 0.5f * sinf((i * pi / (slices / 2)) - (pi / 2));
+        float befYPos = 0.5f * sinf(((i - 1) * pi / (slices / 2)) - (pi / 2));
+        float radius = sqrtf((0.5f * 0.5f) - (yPos * yPos));
+
+        for (int j = 0; j <= slices; j++)
+        {
+            if (j != slices)
+                temp.push_back(glm::vec3(radius * cosf(j * angleStep), yPos, radius * sinf(j * angleStep)));
+
+            if (j != 0)
+            {
+                if (i == 1) // triangle
+                {
+                    indices.push_back(1);
+                    indices.push_back(j + 1);
+                    indices.push_back(j != slices ? j + 2 : 2);
+                }
+
+                else
+                {
+                    indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
+                    indices.push_back((i - 2) * slices + j + 1);
+                    indices.push_back((i - 1) * slices + j + 1);
+
+                    indices.push_back((i - 2) * slices + j + 1);
+                    indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
+                    indices.push_back((i - 2) * slices + (j != slices ? j + 2 : 2));
+                }
+
+                if (i == (slices / 2) - 1)
+                {
+                    indices.push_back(0);
+                    indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
+                    indices.push_back((i - 1) * slices + j + 1);
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < indices.size(); i++)
+    {
+        points.push_back(temp[indices[i]]);
+    }
+}
+
+void CS300Parser::Light::InitVertexArray()
+{
+    int s = (int)points.size();
+    //vertices
+    for (int i = 0; i < s; i++)
+    {
+        //points
+        vertices.push_back(points[i].x);
+        vertices.push_back(points[i].y);
+        vertices.push_back(points[i].z);
+    }
+
+    //Sanity Check
+    if (vertices.size() == 0)
+        return;
+
+    //Gen VBO
+    glGenBuffers(1, &lightingVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, lightingVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * (sizeof(float)), &vertices[0], GL_STATIC_DRAW);
+
+    //Gen VAO
+
+    //Assign Coordinates
+    glGenVertexArrays(1, &lightingVAO);
+    glBindVertexArray(lightingVAO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
