@@ -302,6 +302,7 @@ void Level::Render(Model* obj)
 	shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
 	shader->setUniform("m2w", m2w);
 	shader->setUniform("useTexture", texture);
+	shader->setUniform("cameraPos", cam.camPos);
 	shader->setUniform("tex", 6);
 
 
@@ -335,10 +336,10 @@ void Level::Lighting()
 		glm::vec4 diffuse			= glm::vec4(0.0f);
 		glm::vec4 specular			= glm::vec4(0.0f);
 		glm::vec4 position			= glm::vec4(0.0f);
-		glm::vec3 spotDirection		= glm::vec3(0.0f);
+		glm::vec3 direction			= glm::vec3(0.0f);
 		float spotExponent			= 0;
-		float spotCutoff			= 0; // (range: [0.0,90.0], 180.0)
-		float spotCosCutoff			= 0; // (range: [1.0,0.0], -1.0)
+		float spotInner				= 0;
+		float spotOuter				= 0;
 		float constantAttenuation	= 0;
 		float linearAttenuation		= 0;
 		float quadraticAttenuation	= 0;
@@ -352,13 +353,13 @@ void Level::Lighting()
 		{
 			lgt->type == "POINT" ? 0 : lgt->type == "SPOT" ? 1 : 2,	//type
 			glm::vec4(lgt->amb * lgt->col, 1),						//ambient
-			glm::vec4(),											//diffuse
-			glm::vec4(),											//specualr
+			glm::vec4(lgt->col, 1.0f),								//diffuse
+			glm::vec4(lgt->col, 1.0f),								//specualr
 			glm::vec4(lgt->pos,1.0f),								//position
-			lgt->dir,												//spotDirection
+			lgt->dir,												//Direction (or spotDirection)
 			lgt->falloff,											//spotExponent
-			lgt->inner,												//spotCutoff
-			lgt->outer,												//spotCosCutoff
+			lgt->inner,												//spotInner
+			lgt->outer,												//spotOuter
 			lgt->att.x,												//constantAttenuation
 			lgt->att.y,												//linearAttenuation
 			lgt->att.z												//quadraticAttenuation
@@ -368,11 +369,11 @@ void Level::Lighting()
 		shader->setUniform(lightName + "ambient", light.ambient);
 		shader->setUniform(lightName + "diffuse", light.diffuse);
 		shader->setUniform(lightName + "specular", light.specular);
-		shader->setUniform(lightName + "positionWorld", light.position);
-		shader->setUniform(lightName + "spotDirection", light.spotDirection);
+		shader->setUniform(lightName + "position", light.position);
+		shader->setUniform(lightName + "direction", light.direction);
 		shader->setUniform(lightName + "spotExponent", light.spotExponent);
-		shader->setUniform(lightName + "spotCutoff", light.spotCutoff);
-		shader->setUniform(lightName + "spotCosCutoff", light.spotCosCutoff);
+		shader->setUniform(lightName + "spotInner", light.spotInner);
+		shader->setUniform(lightName + "spotOuter", light.spotOuter);
 		shader->setUniform(lightName + "constantAttenuation", light.constantAttenuation);
 		shader->setUniform(lightName + "linearAttenuation", light.linearAttenuation);
 		shader->setUniform(lightName + "quadraticAttenuation", light.quadraticAttenuation);
