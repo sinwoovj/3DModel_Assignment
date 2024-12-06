@@ -15,11 +15,11 @@ struct Model
 {
 	struct MaterialParameters
 	{
-		glm::vec4 emission = glm::vec4(1.0f);
+		glm::vec4 emission = glm::vec4(0.0f);
 		glm::vec4 ambient = glm::vec4(1.0f);
 		glm::vec4 diffuse = glm::vec4(1.0f); //will be texture Color
 		glm::vec4 specular = glm::vec4(1.0f);
-		float shininess = 50.f; //defualt value is 10
+		float shininess = 10.f; //defualt value is 10
 	};
 	CS300Parser::Transform transf;
 	MaterialParameters material;

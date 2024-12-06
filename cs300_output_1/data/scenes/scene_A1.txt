@@ -129,4 +129,4 @@ lightType SPOT
 attenuation 0 0.0 0.0	
 direction 0 -1 0
 spotAttenuation 0 10 1
-orbit 0 30 50
+orbit 0 30 50s

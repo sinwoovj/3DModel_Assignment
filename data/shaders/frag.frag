@@ -45,11 +45,9 @@ void main()
     {
         matDiff = texture(tex, UV); //textureColor == diffuse of material
     }
-
+    vec3 test_color;
     vec3 norm = normalize(Normal);
     vec3 asi = vec3(0.0f); //ambient + att(spot * (I.diffuse+I.specular))
-    vec3 t_amb = vec3(0.0f);
-    vec3 t_dfsc = vec3(0.0f);
     
     for(int i = 0; i < activeCount; i++)
     {
@@ -62,48 +60,53 @@ void main()
         float spot = 1.0f;
 
         //ambient
-        vec3 amb = vec3(light[i].ambient * material.ambient);
+        vec3 amb = vec3(light[i].ambient * material.ambient) * matDiff.rgb;
         //attenuation
         //- light source attenuation
-        float lAtt = 1.0;
+        float lAtt = 1.0f;
         //- atmospheric attenuation (these time not using)
-
+        
+        float c1 = light[i].constantAttenuation;
+        float c2 = light[i].linearAttenuation;
+        float c3 = light[i].quadraticAttenuation;
         switch (light[i].type)
         {
             case 0: // when it is point
-                lAtt = min(1/(light[i].constantAttenuation + (light[i].linearAttenuation * dis) + light[i].quadraticAttenuation * (dis * dis)), 1);
+                lAtt = min(1.0f/((c1) + (c2 * dis) + (c3 * (dis * dis))), 1.0f);
                 lightDir = L;
                 break;
             case 1: // when it is spot
-                lAtt = min(1/(light[i].constantAttenuation + (light[i].linearAttenuation * dis) + light[i].quadraticAttenuation * (dis * dis)), 1);
-                lightDir = light[i].direction;
+                lAtt = min(1.0f/((c1) + (c2 * dis) + (c3 * (dis * dis))), 1.0f);
+                lightDir = -light[i].direction;
                 vec3 RL = (FragPos - vec3(light[i].position));
                 float Alpha = acos(dot(L,lightDir)/dot(length(L),length(lightDir)));
-                float Theta = light[i].spotInner;
-                float Phi = light[i].spotOuter;
+                float Theta = radians(light[i].spotInner);
+                float Phi = radians(light[i].spotOuter);
                 float P = light[i].spotExponent;
 
                 spot = pow(((cos(Alpha)-cos(Phi))/(cos(Theta)-cos(Phi))), P);
+                spot = clamp(spot, 0, 1);
                 break;
             case 2 : //when it is dir
                 //tmp *= lAtt;  not use at dir
-                lightDir = light[i].direction;
+                lightDir = -light[i].direction;
                 break;
         }
         //diffuse
         float diff = max(dot(norm, lightDir), 0.0);
-        vec3 diffuse = diff * vec3(matDiff);
+        vec3 diffuse = diff * matDiff.xyz;
 
         //specular
-        vec3 R = normalize((2.0f * (dot(norm, lightDir)) * norm) - lightDir);
+        vec3 R = (2.0f * (dot(norm, lightDir)) * norm) - lightDir;
         vec3 V = normalize(cameraPos - FragPos);
         vec3 specular = vec3(light[i].specular * material.specular) * (pow(max(dot(R, V),0), material.shininess));
         tmp = spot * (diffuse + specular);
 
         //assemble result
-        asi += amb + tmp * lAtt;
+        asi += amb + (tmp * lAtt);
     }
-    result = vec4(asi, 1.0f);
+    result = material.emission + vec4(asi, 1.0f);
 
     FragColor = result;
+    //FragColor = vec4(test_color/2 , 1.0);
 }

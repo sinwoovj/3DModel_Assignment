@@ -158,7 +158,8 @@ void Level::Run()
 		bool showLighting = true;
 		if (showLighting)
 		{
-			Lighting();
+
+			Lighting(time);
 		}
 
 		glUseProgram(0);
@@ -326,7 +327,7 @@ void Level::Render(Model* obj)
 	glBindVertexArray(0);
 }
 
-void Level::Lighting()
+void Level::Lighting(float time)
 {
 	//lighting
 	struct LightSourceParameters
@@ -349,6 +350,15 @@ void Level::Lighting()
 	int i = 0;
 	for (auto lgt : allLights)
 	{
+		glm::vec3 temp = lgt->st_pos;
+
+		//Animation Update
+		for (auto anim : lgt->anims)
+		{
+			temp = anim.Update(temp, time);
+		}
+		lgt->pos = temp;
+
 		LightSourceParameters light
 		{
 			lgt->type == "POINT" ? 0 : lgt->type == "SPOT" ? 1 : 2,	//type
@@ -364,7 +374,7 @@ void Level::Lighting()
 			lgt->att.y,												//linearAttenuation
 			lgt->att.z												//quadraticAttenuation
 		};
-		std::string lightName = "light[" + std::to_string(i) + "].";
+		std::string lightName = "light[" + std::to_string(i++) + "].";
 		shader->setUniform(lightName + "type", light.type);
 		shader->setUniform(lightName + "ambient", light.ambient);
 		shader->setUniform(lightName + "diffuse", light.diffuse);

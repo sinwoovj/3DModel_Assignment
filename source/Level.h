@@ -30,7 +30,7 @@ struct Level
 	std::vector<CS300Parser::Light*> allLights;
 private:
 	void Render(Model*);
-	void Lighting();
+	void Lighting(float time);
 	Level();
 	~Level();
 	Level(const Level&) = delete;
@@ -70,7 +70,7 @@ private:
 public:
 	KeyState key;
 	bool showNormal = false;
-	bool normalAvg = false; // false : face, true : averaged
+	bool normalAvg = true; // false : face, true : averaged
 	bool texture;
 	//shaders
 	cg::Program* shader;
