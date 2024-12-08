@@ -54,7 +54,7 @@ void main()
     {
         //distance between the light source and the point
         float dis = length(vec3(light[i].position) - FragPos);
-        vec3 L = normalize(vec3(light[i].position) - FragPos);
+        vec3 L = normalize(vec3(light[i].position) - FragPos); // world
         vec3 lightDir = vec3(0.0f);
 
         vec3 tmp = vec3(1.0f);
@@ -74,12 +74,11 @@ void main()
         {
             case 0: // when it is point
                 lAtt = min(1.0f/((c1) + (c2 * dis) + (c3 * (dis * dis))), 1.0f);
-                lightDir = normalize(tbnMat * normalize(L));
-                lightDir = normalize(L);
+                lightDir = normalize(tbnMat * L);
                 break;
             case 1: // when it is spot
                 lAtt = min(1.0f/((c1) + (c2 * dis) + (c3 * (dis * dis))), 1.0f);
-                lightDir = -normalize(tbnMat * normalize(light[i].direction));
+                lightDir = normalize(tbnMat * -normalize(light[i].direction));
                 vec3 RL = (FragPos - vec3(light[i].position));
                 float Alpha = acos(dot(L,lightDir)/dot(length(L),length(lightDir)));
                 float Theta = radians(light[i].spotInner);
@@ -91,7 +90,7 @@ void main()
                 break;
             case 2 : //when it is dir
                 //tmp *= lAtt;  not use at dir
-                lightDir = -normalize(tbnMat * normalize(light[i].direction));
+                lightDir = normalize(tbnMat * -normalize(light[i].direction));
                 break;
         }
 

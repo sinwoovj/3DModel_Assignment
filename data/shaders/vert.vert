@@ -23,7 +23,7 @@ void main()
    vec3 Nor = normalize(transpose(inverse(mat3(m2w))) * vNormals);
    vec3 Tan = normalize(transpose(inverse(mat3(m2w))) * vTangent);
    vec3 Bin = cross(Nor, Tan);
-   mat3 tbnMat = transpose(mat3(Tan, Bin, Nor)); //row major
+   tbnMat = transpose(mat3(Tan, Bin, Nor)); //row major
 
    gl_Position = model * vPosition;
 }
