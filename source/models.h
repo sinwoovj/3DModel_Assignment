@@ -29,6 +29,7 @@ struct Model
 	std::vector<glm::vec3> points;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> UV;
+	std::vector<glm::vec3> tangent;
 
 	std::vector<float> vertices;
 
@@ -36,6 +37,10 @@ struct Model
 	std::vector<int> normalIndeces;
 	unsigned int VBO;
 	unsigned int VAO;
+	unsigned int normal_tex;
+
+	unsigned char* texData;
+	unsigned char* norTexData;
 
 	unsigned int texobj;
 
@@ -48,6 +53,7 @@ struct Model
 
 	void InitVertexArray();
 	void CreateTexobj();
+	void CreateNorMap();
 	void GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi);
 	
 	static int slices;

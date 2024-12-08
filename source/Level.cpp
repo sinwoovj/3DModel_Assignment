@@ -45,7 +45,7 @@ int Level::Initialize()
 
 	//Load Scene
 	CS300Parser parser;
-	parser.LoadDataFromFile("data/scenes/scene_A1.txt");
+	parser.LoadDataFromFile("data/scenes/scene_A2.txt");
 	
 	//Convert from parser->obj to Model
 	for (auto o : parser.objects)
@@ -295,6 +295,17 @@ void Level::Render(Model* obj)
 	//use obj VAO
 	glBindVertexArray(obj->VAO);
 
+	shader->setUniform("normalMap", 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, obj->normal_tex);
+
+	if (texture)
+	{
+		shader->setUniform("tex", 1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, obj->texobj);
+	}
+
 	//Send model matrix to the shader
 	glm::mat4x4 m2w = obj->ComputeMatrix();
 
@@ -304,7 +315,7 @@ void Level::Render(Model* obj)
 	shader->setUniform("m2w", m2w);
 	shader->setUniform("useTexture", texture);
 	shader->setUniform("cameraPos", cam.camPos);
-	shader->setUniform("tex", 6);
+	
 
 
 	//Material
@@ -315,16 +326,12 @@ void Level::Render(Model* obj)
 	shader->setUniform("material.specular", obj->material.specular);
 	shader->setUniform("material.shininess", obj->material.shininess);
 
-	if (texture)
-	{
-		glBindTextureUnit(6, obj->texobj);
-		glBindTexture(GL_TEXTURE_2D, obj->texobj);
-	}
 
 	//draw
 	glDrawArrays(GL_TRIANGLES, 0, obj->points.size());
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Level::Lighting(float time)

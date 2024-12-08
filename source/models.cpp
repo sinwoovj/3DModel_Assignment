@@ -10,7 +10,9 @@
 
 //#define TINYOBJLOADER_IMPLEMENTATION
 #include "../extern/tiny_obj_loader.h"
-
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#include <iostream>
 #include <numeric>
 
 
@@ -106,11 +108,14 @@ void Model::LoadModel()
 
 void Model::InitModel()
 {
+	std::string meshtype = transf.mesh;
+	
 	glDeleteBuffers(1, &VBO);
 	glDeleteVertexArrays(1, &VAO);
 	points.clear();
 	normals.clear();
 	UV.clear();
+	tangent.clear();
 	vertices.clear();
 	pointIndeces.clear();
 	normalIndeces.clear();
@@ -131,6 +136,10 @@ void Model::InitModel()
 		//UV
 		vertices.push_back(UV[i].x);
 		vertices.push_back(UV[i].y);
+		//Tansent
+		vertices.push_back(tangent[int(i / 3)].x);
+		vertices.push_back(tangent[int(i / 3)].y);
+		vertices.push_back(tangent[int(i / 3)].z);
 	}
 
 	//Sanity Check
@@ -147,22 +156,28 @@ void Model::InitModel()
 	//Assign Coordinates
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	//Assign Normals
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	//Assign UV
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 
+	//Tangent
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(8 * sizeof(float)));
+	glEnableVertexAttribArray(3);
+	glBindVertexArray(0);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 }
 
-Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO(0), VAO(0)
+Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO(0), VAO(0), normal_tex(0), texData(nullptr), norTexData(nullptr)
 {
 	//load points
 	InitModel();
@@ -171,6 +186,8 @@ Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO
 
 	CreateTexobj();
 
+	CreateNorMap();
+
 	InitVertexArray();
 }
 
@@ -178,6 +195,9 @@ Model::~Model()
 {
 	glDeleteBuffers(1, &VBO);
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteTextures(1, &normal_tex);
+	texData = nullptr;
+	norTexData = nullptr;
 }
 
 void Model::SetMaterial()
@@ -202,6 +222,11 @@ void Model::InitVertexArray()
 		//UV
 		vertices.push_back(UV[i].x);
 		vertices.push_back(UV[i].y);
+
+		//Tansent
+		vertices.push_back(tangent[int(i / 3)].x);
+		vertices.push_back(tangent[int(i / 3)].y);
+		vertices.push_back(tangent[int(i / 3)].z);
 	}
 
 	//Sanity Check
@@ -218,16 +243,20 @@ void Model::InitVertexArray()
 	//Assign Coordinates
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	//Assign Normals
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	//Assign UV
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
+
+	//Assign Tangent
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(8 * sizeof(float)));
+	glEnableVertexAttribArray(3);
 	
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -247,7 +276,7 @@ void Model::CreateTexobj()
 		glm::vec3(1, 0, 1)    // Purple
 	};
 
-	unsigned char* data = new unsigned char[width * height * 3 * 4];
+	texData = new unsigned char[width * height * 3 * 4];
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)
@@ -259,9 +288,9 @@ void Model::CreateTexobj()
 				for (int px = 0; px < 2; px++)
 				{
 					int idx = ((y * 2 + py) * width * 2 + (x * 2 + px)) * 3;
-					data[idx] = colors[colorIdx].r * 255;
-					data[idx + 1] = colors[colorIdx].g * 255;
-					data[idx + 2] = colors[colorIdx].b * 255;
+					texData[idx] = colors[colorIdx].r * 255;
+					texData[idx + 1] = colors[colorIdx].g * 255;
+					texData[idx + 2] = colors[colorIdx].b * 255;
 				}
 			}
 		}
@@ -269,13 +298,37 @@ void Model::CreateTexobj()
 
 	glGenTextures(1, &texobj);
 	glBindTexture(GL_TEXTURE_2D, texobj);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width * 2, height * 2, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width * 2, height * 2, 0, GL_RGB, GL_UNSIGNED_BYTE, texData);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
 
-	delete[] data;
+void Model::CreateNorMap()
+{
+	// 텍스처 로드 및 생성
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(1);
+
+	norTexData = stbi_load(transf.normalMap.c_str(), &width, &height, &nrChannels, 0);
+	if (stbi_failure_reason())
+		std::cout << stbi_failure_reason() << std::endl;
+	
+	GLuint format = GL_RGB;
+	if(nrChannels > 3)
+		format = GL_RGBA;
+
+	//Normal Texture
+	glGenTextures(1, &normal_tex);
+	glBindTexture(GL_TEXTURE_2D, normal_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, nrChannels, width, height, 0, format, GL_UNSIGNED_BYTE, norTexData);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
@@ -394,6 +447,21 @@ void Model::CreateModelPlane()
 		//Load Indexes
 		UV.push_back(tempUV[p]);
 	}
+
+	//Save Tangent
+	for (int i = 0; i < points.size(); i += 3)
+	{
+		glm::vec3 V1 = points[i + 1] - points[i];
+		glm::vec3 V2 = points[i + 2] - points[i];
+		glm::vec2 A = UV[i];
+		glm::vec2 B = UV[i+1];
+		glm::vec2 C = UV[i+2];
+		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
+		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
+		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+		tangent.push_back(T);
+	}
+
 }
 
 void Model::CreateModelCube()
@@ -468,6 +536,21 @@ void Model::CreateModelCube()
 		UV.push_back(Cube_TexCoord[coord]);
 		i++;
 	}
+
+	//Save Tangent
+	for (int i = 0; i < points.size(); i += 3)
+	{
+		glm::vec3 V1 = points[i + 1] - points[i];
+		glm::vec3 V2 = points[i + 2] - points[i];
+		glm::vec2 A = UV[i];
+		glm::vec2 B = UV[i + 1];
+		glm::vec2 C = UV[i + 2];
+		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
+		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
+		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+		tangent.push_back(T);
+	}
+
 	GetNormal(Cube_Vertex, Vertex_Indexs);
 }
 
@@ -519,6 +602,21 @@ void Model::CreateModelCone(int slices)
 			Vertex_Indexs.push_back(ntsc);
 		}
 	}
+
+	//Save Tangent
+	for (int i = 0; i < points.size(); i += 3)
+	{
+		glm::vec3 V1 = points[i + 1] - points[i];
+		glm::vec3 V2 = points[i + 2] - points[i];
+		glm::vec2 A = UV[i];
+		glm::vec2 B = UV[i + 1];
+		glm::vec2 C = UV[i + 2];
+		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
+		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
+		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+		tangent.push_back(T);
+	}
+
 	GetNormal(Cone_Vertex, Vertex_Indexs);
 }
 
@@ -589,6 +687,20 @@ void Model::CreateModelCylinder(int slices)
 			Vertex_Indexs.push_back(int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices);
 		}
 	}
+	//Save Tangent
+	for (int i = 0; i < points.size(); i += 3)
+	{
+		glm::vec3 V1 = points[i + 1] - points[i];
+		glm::vec3 V2 = points[i + 2] - points[i];
+		glm::vec2 A = UV[i];
+		glm::vec2 B = UV[i + 1];
+		glm::vec2 C = UV[i + 2];
+		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
+		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
+		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+		tangent.push_back(T);
+	}
+
 	GetNormal(Cylinder_Vertex, Vertex_Indexs);
 }
 
@@ -667,6 +779,20 @@ void Model::CreateModelSphere(int slices)
 	for (int i = 0; i < indices.size(); i++)
 	{
 		points.push_back(temp[indices[i]]);
+	}
+
+	//Save Tangent
+	for (int i = 0; i < points.size(); i += 3)
+	{
+		glm::vec3 V1 = points[i + 1] - points[i];
+		glm::vec3 V2 = points[i + 2] - points[i];
+		glm::vec2 A = UV[i];
+		glm::vec2 B = UV[i + 1];
+		glm::vec2 C = UV[i + 2];
+		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
+		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
+		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+		tangent.push_back(T);
 	}
 
 	GetNormal(temp, indices);

@@ -950,6 +950,9 @@
     <ClInclude Include="extern\GLFW\glfw3native.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="extern\stb_image.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="extern\glm\detail\func_common.inl">
