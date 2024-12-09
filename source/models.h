@@ -44,8 +44,9 @@ struct Model
 
 	unsigned int texobj;
 
+	void Initialize();
+
 	void LoadModel();
-	void InitModel();
 	Model(const CS300Parser::Transform& _transform);
 	~Model();
 
@@ -55,10 +56,12 @@ struct Model
 	void CreateTexobj();
 	void CreateNorMap();
 	void GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi);
-	
+	void GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vector<glm::vec2>& uv);
+	bool FindVertex(const std::vector<std::vector<glm::vec3>>& vertexNormals, const int ind, const glm::vec3& normal);
 	static int slices;
 
 private:
+	void InitModel();
 	//TODO
 	void CreateModelPlane();
 	void CreateModelCube();

@@ -49,7 +49,7 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
             if (Model::slices > 4) Model::slices--;
             for (auto o : ptr->allObjects)
             {
-                o->InitModel();
+                o->Initialize();
             }
         }
         if (key == GLFW_KEY_X || key == GLFW_KEY_KP_ADD)
@@ -57,19 +57,21 @@ void Controls::keyCallback(GLFWwindow* pWindow, int key, int scancode, int actio
             Model::slices++;
             for (auto o : ptr->allObjects)
             {
-                o->InitModel();
+                o->Initialize();
             }
         }
         if (key == GLFW_KEY_N)
             ptr->showNormal = !ptr->showNormal;
         if (key == GLFW_KEY_T)
-            ptr->texture = !ptr->texture;
+        {
+            if (++ptr->render_mode > 3) ptr->render_mode = 0;
+        }
         if (key == GLFW_KEY_F)
         {
             ptr->normalAvg = !ptr->normalAvg;
             for (auto o : ptr->allObjects)
             {
-                o->InitModel();
+                o->Initialize();
             }
         }
     }

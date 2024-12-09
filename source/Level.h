@@ -71,7 +71,7 @@ public:
 	KeyState key;
 	bool showNormal = false;
 	bool normalAvg = true; // false : face, true : averaged
-	bool texture;
+	int render_mode;
 	//shaders
 	cg::Program* shader;
 	cg::Program* lighting_shader;

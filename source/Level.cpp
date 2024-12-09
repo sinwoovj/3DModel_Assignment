@@ -299,21 +299,20 @@ void Level::Render(Model* obj)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, obj->normal_tex);
 
-	if (texture)
-	{
-		shader->setUniform("tex", 1);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, obj->texobj);
-	}
+	shader->setUniform("tex", 1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, obj->texobj);
 
 	//Send model matrix to the shader
 	glm::mat4x4 m2w = obj->ComputeMatrix();
+	glm::mat4x4 m2v = cam.ViewMat * obj->ComputeMatrix();
 
 	//Send view matrix to the shader
 	normal_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
 	shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
 	shader->setUniform("m2w", m2w);
-	shader->setUniform("useTexture", texture);
+	shader->setUniform("m2v", m2v);
+	shader->setUniform("render_mode", render_mode);
 	shader->setUniform("cameraPos", cam.camPos);
 	
 
@@ -419,7 +418,7 @@ void Level::Lighting(float time)
 }
 
 
-Level::Level() : window(nullptr), shader(nullptr), lighting_shader(nullptr), normal_shader(nullptr), texture(false)
+Level::Level() : window(nullptr), shader(nullptr), lighting_shader(nullptr), normal_shader(nullptr), render_mode(0)
 {
 
 }

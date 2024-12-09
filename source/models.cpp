@@ -44,6 +44,20 @@ glm::mat4x4 Model::ComputeMatrix()
 	return temp;
 }
 
+void Model::Initialize()
+{
+	//load points
+	InitModel();
+
+	SetMaterial();
+
+	CreateTexobj();
+
+	CreateNorMap();
+
+	InitVertexArray();
+}
+
 void Model::LoadModel()
 {
 	//If exception. use one of our functions
@@ -93,30 +107,19 @@ void Model::LoadModel()
 		//Load Shapes (vertex indexes)
 		for (auto s : shapes)
 		{
+			std::vector<int> tempIndexes;
 			for (auto p : s.mesh.indices)
 			{
 				//Load vertexes
 				points.push_back(temp[p.vertex_index]);
+				tempIndexes.push_back(p.vertex_index);
 				//Load Normals
 				normals.push_back(tempN[p.normal_index]);
 				//Load Indexes
 				UV.push_back(tempUV[p.texcoord_index]);
 			}
-		}
-
-
-		//Save Tangent
-		for (int i = 0; i < points.size(); i += 3)
-		{
-			glm::vec3 V1 = points[i + 1] - points[i];
-			glm::vec3 V2 = points[i + 2] - points[i];
-			glm::vec2 A = UV[i];
-			glm::vec2 B = UV[i + 1];
-			glm::vec2 C = UV[i + 2];
-			glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
-			glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
-			glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
-			tangent.push_back(T);
+			
+			GetTangent(temp, tempIndexes,UV);
 		}
 
 	}
@@ -128,6 +131,10 @@ void Model::InitModel()
 	
 	glDeleteBuffers(1, &VBO);
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteTextures(1, &normal_tex);
+	glDeleteTextures(1, &texobj);
+
+
 	points.clear();
 	normals.clear();
 	UV.clear();
@@ -153,9 +160,9 @@ void Model::InitModel()
 		vertices.push_back(UV[i].x);
 		vertices.push_back(UV[i].y);
 		//Tansent
-		vertices.push_back(tangent[int(i / 3)].x);
-		vertices.push_back(tangent[int(i / 3)].y);
-		vertices.push_back(tangent[int(i / 3)].z);
+		vertices.push_back(tangent[i].x);
+		vertices.push_back(tangent[i].y);
+		vertices.push_back(tangent[i].z);
 	}
 
 	//Sanity Check
@@ -195,16 +202,7 @@ void Model::InitModel()
 
 Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO(0), VAO(0), normal_tex(0), texData(nullptr), norTexData(nullptr)
 {
-	//load points
-	InitModel();
-	
-	SetMaterial();
-
-	CreateTexobj();
-
-	CreateNorMap();
-
-	InitVertexArray();
+	Initialize();
 }
 
 Model::~Model()
@@ -240,9 +238,9 @@ void Model::InitVertexArray()
 		vertices.push_back(UV[i].y);
 
 		//Tansent
-		vertices.push_back(tangent[int(i / 3)].x);
-		vertices.push_back(tangent[int(i / 3)].y);
-		vertices.push_back(tangent[int(i / 3)].z);
+		vertices.push_back(tangent[i].x);
+		vertices.push_back(tangent[i].y);
+		vertices.push_back(tangent[i].z);
 	}
 
 	//Sanity Check
@@ -384,6 +382,107 @@ void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
 	}
 }
 
+void Model::GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vector<glm::vec2>& uv) //vertex, vertex indices, UV
+{
+	std::vector<glm::vec3> tempT;
+
+	//Save Tangent
+	for (int i = 0; i < vi.size(); i += 3)
+	{
+		glm::vec3 p1 = v[vi[i]];
+		glm::vec3 p2 = v[vi[i + 1]];
+		glm::vec3 p3 = v[vi[i + 2]];
+		glm::vec3 V1 = p2 - p1;
+		glm::vec3 V2 = p3 - p1;
+		glm::vec2 A = uv[i];
+		glm::vec2 B = uv[i + 1];
+		glm::vec2 C = uv[i + 2];
+		glm::vec2 Tc1 = B - A;
+		glm::vec2 Tc2 = C - A;
+		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+
+		for (int j = 0; j < 3; j++)
+		{
+			tempT.push_back(T);
+		}
+	}
+	std::vector<std::set<glm::vec3, Vec3Compare>> vertexNSet(v.size());
+	if (Level::GetPtr()->normalAvg) //when make to average value
+	{
+		{
+			std::vector<std::vector<glm::vec3>> vertexNormals(v.size());
+			std::vector<glm::vec3> vertexNSum(v.size());
+			std::vector<int> vertexNCount(v.size());
+
+			for (int i = 0; i < vi.size(); i++)
+			{
+				if (!FindVertex(vertexNormals, vi[i], tempT[i]))
+				{
+					vertexNormals[vi[i]].push_back(tempT[i]);
+					vertexNSum[vi[i]] += tempT[i];
+					vertexNCount[vi[i]]++;
+				}
+			}
+
+			for (int i = 0; i < vi.size(); i++)
+			{
+				if (glm::length(vertexNSum[vi[i]]) == 0)
+					tangent.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+				else
+					tangent.push_back(glm::normalize(vertexNSum[vi[i]] / (float)vertexNCount[vi[i]]));
+			}
+		}
+	}
+	else
+	{
+		tangent = tempT;
+	}
+	//	for (int i = 0; i < vi.size(); i++)
+	//	{
+	//		vertexNSet[vi[i]].insert(tempT[i]);
+	//	}
+
+	//	for (int i = 0; i < vi.size(); i++)
+	//	{
+	//		glm::vec3 v = glm::vec3(0.0f);
+	//		for (auto it = vertexNSet[vi[i]].begin(); it != vertexNSet[vi[i]].end(); it++)
+	//		{
+	//			v.x += it->x;
+	//			v.y += it->y;
+	//			v.z += it->z;
+	//		}
+	//		if (glm::length(v) != 0)
+	//		{
+	//			v = glm::normalize(v);
+	//		}
+	//		tangent.push_back(v);
+	//	}
+
+	//}
+	//else
+	//{
+	//	tangent = tempT;
+	//}
+
+
+	/*for (auto it : tangent)
+	{
+		if (it == glm::vec3(0.0, 0.0, 0.0))
+		{
+			it = glm::vec3(1.0, 0.0, 0.0);
+		}
+	}*/
+}
+bool Model::FindVertex(const std::vector<std::vector<glm::vec3>>& vertexNormals, const int ind, const glm::vec3& normal)
+{
+	for (auto n : vertexNormals[ind])
+	{
+		if (n == normal)
+			return true;
+	}
+
+	return false;
+}
 //TODO:
 void Model::CreateModelPlane()
 {
@@ -409,16 +508,16 @@ void Model::CreateModelPlane()
 	};
 	//¿Œµ¶Ω∫
 	std::vector<int> Vertex_Indexs = {
-		2, 0, 3,
-		2, 1, 0
+		1, 0, 2,
+		2, 0, 3
 	};
 	std::vector<int> Normal_Indexs = {
-		2, 0, 3,
-		2, 1, 0
+		1, 0, 2,
+		2, 0, 3
 	};
 	std::vector<int> Texcoords_Indexs = {
-		2, 0, 3,
-		2, 1, 0
+		1, 0, 2,
+		2, 0, 3
 	};
 	//TODO: UVs
 
@@ -463,20 +562,7 @@ void Model::CreateModelPlane()
 		UV.push_back(tempUV[p]);
 	}
 
-	//Save Tangent
-	for (int i = 0; i < points.size(); i += 3)
-	{
-		glm::vec3 V1 = points[i + 1] - points[i];
-		glm::vec3 V2 = points[i + 2] - points[i];
-		glm::vec2 A = UV[i];
-		glm::vec2 B = UV[i+1];
-		glm::vec2 C = UV[i+2];
-		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
-		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
-		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
-		tangent.push_back(T);
-	}
-
+	GetTangent(temp, Vertex_Indexs, UV);
 }
 
 void Model::CreateModelCube()
@@ -552,21 +638,8 @@ void Model::CreateModelCube()
 		i++;
 	}
 
-	//Save Tangent
-	for (int i = 0; i < points.size(); i += 3)
-	{
-		glm::vec3 V1 = points[i + 1] - points[i];
-		glm::vec3 V2 = points[i + 2] - points[i];
-		glm::vec2 A = UV[i];
-		glm::vec2 B = UV[i + 1];
-		glm::vec2 C = UV[i + 2];
-		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
-		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
-		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
-		tangent.push_back(T);
-	}
-
 	GetNormal(Cube_Vertex, Vertex_Indexs);
+	GetTangent(Cube_Vertex, Vertex_Indexs, UV);
 }
 
 void Model::CreateModelCone(int slices)
@@ -617,22 +690,9 @@ void Model::CreateModelCone(int slices)
 			Vertex_Indexs.push_back(ntsc);
 		}
 	}
-
-	//Save Tangent
-	for (int i = 0; i < points.size(); i += 3)
-	{
-		glm::vec3 V1 = points[i + 1] - points[i];
-		glm::vec3 V2 = points[i + 2] - points[i];
-		glm::vec2 A = UV[i];
-		glm::vec2 B = UV[i + 1];
-		glm::vec2 C = UV[i + 2];
-		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
-		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
-		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
-		tangent.push_back(T);
-	}
-
+	
 	GetNormal(Cone_Vertex, Vertex_Indexs);
+	GetTangent(Cone_Vertex, Vertex_Indexs, UV);
 }
 
 void Model::CreateModelCylinder(int slices)
@@ -702,21 +762,9 @@ void Model::CreateModelCylinder(int slices)
 			Vertex_Indexs.push_back(int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices);
 		}
 	}
-	//Save Tangent
-	for (int i = 0; i < points.size(); i += 3)
-	{
-		glm::vec3 V1 = points[i + 1] - points[i];
-		glm::vec3 V2 = points[i + 2] - points[i];
-		glm::vec2 A = UV[i];
-		glm::vec2 B = UV[i + 1];
-		glm::vec2 C = UV[i + 2];
-		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
-		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
-		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
-		tangent.push_back(T);
-	}
-
 	GetNormal(Cylinder_Vertex, Vertex_Indexs);
+
+	GetTangent(Cylinder_Vertex, Vertex_Indexs, UV);
 }
 
 void Model::CreateModelSphere(int slices)
@@ -799,19 +847,6 @@ void Model::CreateModelSphere(int slices)
 		points.push_back(temp[indices[i]]);
 	}
 
-	//Save Tangent
-	for (int i = 0; i < points.size(); i += 3)
-	{
-		glm::vec3 V1 = points[i + 1] - points[i];
-		glm::vec3 V2 = points[i + 2] - points[i];
-		glm::vec2 A = UV[i];
-		glm::vec2 B = UV[i + 1];
-		glm::vec2 C = UV[i + 2];
-		glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
-		glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
-		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
-		tangent.push_back(T);
-	}
-
 	GetNormal(temp, indices);
+	GetTangent(temp, indices, UV);
 }

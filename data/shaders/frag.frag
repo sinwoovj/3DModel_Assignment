@@ -6,10 +6,14 @@ in vec2 UV;
 in vec3 Normal;
 in vec3 FragPos;
 in mat3 tbnMat;
+in vec3 T;
+in vec3 VT;
+in vec3 VBT;
+in vec3 VTSN;
 
 uniform sampler2D tex;
 uniform sampler2D normalMap;
-uniform int useTexture;
+uniform int render_mode;
 uniform mat4 m2w;
 
 struct LightSourceParameters
@@ -43,9 +47,20 @@ uniform vec3 cameraPos;
 void main()
 { 
     vec4 matDiff = vec4(UV, 0.0, 1.0);
-    if (useTexture == 1) // when using texture
+    switch(render_mode)
     {
-        matDiff = texture(tex, UV); //textureColor == diffuse of material
+        case 0:
+            matDiff = texture(tex, UV);
+            break;
+        case 1: 
+            matDiff = vec4(VTSN ,1.0f); // Nor
+            break;
+        case 2:
+            matDiff = vec4(VT ,1.0f); // Tan
+            break;
+        case 3:
+            matDiff = vec4(VBT ,1.0f); // Btan
+            break;
     }
 
     vec3 norm = normalize(2.0 * texture(normalMap, UV).xyz - 0.1); //TS
@@ -112,4 +127,6 @@ void main()
         //asi += specular;
     }
     FragColor = vec4(asi, 1.0f);
+    //FragColor = vec4((T + vec3(0.5,0.5,0.5)) / 2, 1.0f);
+	//FragColor = texture(tex,UV);
 }
