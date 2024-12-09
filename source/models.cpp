@@ -387,26 +387,35 @@ void Model::GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vec
 	std::vector<glm::vec3> tempT;
 
 	//Save Tangent
-	for (int i = 0; i < vi.size(); i += 3)
+	for (int i = 0; i < vi.size(); i+=3)
 	{
+		//POINT
 		glm::vec3 p1 = v[vi[i]];
 		glm::vec3 p2 = v[vi[i + 1]];
 		glm::vec3 p3 = v[vi[i + 2]];
-		glm::vec3 V1 = p2 - p1;
-		glm::vec3 V2 = p3 - p1;
 		glm::vec2 A = uv[i];
 		glm::vec2 B = uv[i + 1];
 		glm::vec2 C = uv[i + 2];
+
+		glm::vec3 V1 = p2 - p1;
+		glm::vec3 V2 = p3 - p1;
 		glm::vec2 Tc1 = B - A;
 		glm::vec2 Tc2 = C - A;
 		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
-
-		for (int j = 0; j < 3; j++)
-		{
-			tempT.push_back(T);
-		}
+		tempT.push_back(T);
+		V1 = p1 - p2;
+		V2 = p3 - p2;
+		Tc1 = A - B;
+		Tc2 = C - B;
+		T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+		tempT.push_back(T);
+		V1 = p1 - p3;
+		V2 = p2 - p3;
+		Tc1 = A - C;
+		Tc2 = B - C;
+		T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+		tempT.push_back(T);
 	}
-	std::vector<std::set<glm::vec3, Vec3Compare>> vertexNSet(v.size());
 	if (Level::GetPtr()->normalAvg) //when make to average value
 	{
 		{
@@ -437,41 +446,6 @@ void Model::GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vec
 	{
 		tangent = tempT;
 	}
-	//	for (int i = 0; i < vi.size(); i++)
-	//	{
-	//		vertexNSet[vi[i]].insert(tempT[i]);
-	//	}
-
-	//	for (int i = 0; i < vi.size(); i++)
-	//	{
-	//		glm::vec3 v = glm::vec3(0.0f);
-	//		for (auto it = vertexNSet[vi[i]].begin(); it != vertexNSet[vi[i]].end(); it++)
-	//		{
-	//			v.x += it->x;
-	//			v.y += it->y;
-	//			v.z += it->z;
-	//		}
-	//		if (glm::length(v) != 0)
-	//		{
-	//			v = glm::normalize(v);
-	//		}
-	//		tangent.push_back(v);
-	//	}
-
-	//}
-	//else
-	//{
-	//	tangent = tempT;
-	//}
-
-
-	/*for (auto it : tangent)
-	{
-		if (it == glm::vec3(0.0, 0.0, 0.0))
-		{
-			it = glm::vec3(1.0, 0.0, 0.0);
-		}
-	}*/
 }
 bool Model::FindVertex(const std::vector<std::vector<glm::vec3>>& vertexNormals, const int ind, const glm::vec3& normal)
 {
