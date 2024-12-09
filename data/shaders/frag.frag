@@ -10,6 +10,7 @@ in mat3 tbnMat;
 uniform sampler2D tex;
 uniform sampler2D normalMap;
 uniform int useTexture;
+uniform mat4 m2w;
 
 struct LightSourceParameters
 {
@@ -47,7 +48,9 @@ void main()
         matDiff = texture(tex, UV); //textureColor == diffuse of material
     }
 
-    vec3 norm = normalize(2.0 * texture(normalMap, UV).xyz - 0.1);
+    vec3 norm = normalize(2.0 * texture(normalMap, UV).xyz - 0.1); //TS
+    norm = normalize(inverse(tbnMat)* norm); //MS
+    norm = normalize(mat3(m2w) * norm); //WS
     vec3 asi = vec3(0.0f); //ambient + att(spot * (I.diffuse+I.specular))
     
     for(int i = 0; i < activeCount; i++)
@@ -74,11 +77,11 @@ void main()
         {
             case 0: // when it is point
                 lAtt = min(1.0f/((c1) + (c2 * dis) + (c3 * (dis * dis))), 1.0f);
-                lightDir = normalize(tbnMat * L);
+                lightDir = L;
                 break;
             case 1: // when it is spot
                 lAtt = min(1.0f/((c1) + (c2 * dis) + (c3 * (dis * dis))), 1.0f);
-                lightDir = normalize(tbnMat * -normalize(light[i].direction));
+                lightDir = -light[i].direction;
                 vec3 RL = (FragPos - vec3(light[i].position));
                 float Alpha = acos(dot(L,lightDir)/dot(length(L),length(lightDir)));
                 float Theta = radians(light[i].spotInner);
@@ -90,7 +93,7 @@ void main()
                 break;
             case 2 : //when it is dir
                 //tmp *= lAtt;  not use at dir
-                lightDir = normalize(tbnMat * -normalize(light[i].direction));
+                lightDir = -light[i].direction;
                 break;
         }
 
@@ -100,13 +103,13 @@ void main()
 
         //specular
         vec3 R = (2.0f * (dot(norm, lightDir)) * norm) - lightDir;
-        vec3 V = normalize(tbnMat * normalize(cameraPos - FragPos)); //normalize(v_viewTs)
+        vec3 V = normalize(cameraPos - FragPos);
         vec3 specular = vec3(light[i].specular * material.specular) * (pow(max(dot(R, V),0), material.shininess));
         tmp = spot * (diffuse + specular);
 
         //assemble result
-        //asi += amb + (tmp * lAtt);
-        asi += specular;
+        asi += amb + (tmp * lAtt);
+        //asi += specular;
     }
-    FragColor = material.emission + vec4(asi, 1.0f);
+    FragColor = vec4(asi, 1.0f);
 }

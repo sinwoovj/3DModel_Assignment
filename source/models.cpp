@@ -103,6 +103,22 @@ void Model::LoadModel()
 				UV.push_back(tempUV[p.texcoord_index]);
 			}
 		}
+
+
+		//Save Tangent
+		for (int i = 0; i < points.size(); i += 3)
+		{
+			glm::vec3 V1 = points[i + 1] - points[i];
+			glm::vec3 V2 = points[i + 2] - points[i];
+			glm::vec2 A = UV[i];
+			glm::vec2 B = UV[i + 1];
+			glm::vec2 C = UV[i + 2];
+			glm::vec2 Tc1 = { B.x - A.x, B.y - A.y };
+			glm::vec2 Tc2 = { C.x - A.x, C.y - A.y };
+			glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+			tangent.push_back(T);
+		}
+
 	}
 }
 
@@ -737,9 +753,11 @@ void Model::CreateModelSphere(int slices)
 					indices.push_back(j + 1);
 					indices.push_back(j != slices ? j + 2 : 2);
 
-					UV.push_back(glm::vec2((j - 1) / fslices, 0.0f));
-					UV.push_back(glm::vec2((j - 1) / fslices, yPos + 0.5f));
-					UV.push_back(glm::vec2(j / fslices, yPos + 0.5f));
+					//UV.push_back(glm::vec2((j - 1) / fslices, 0.0f));
+					//UV.push_back(glm::vec2((j - 0.5) / fslices, yPos + 0.5f));
+					UV.push_back(glm::vec2((j - 0.5f) / fslices, 0.0f));
+					UV.push_back(glm::vec2((j - 1) / fslices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2(j / fslices, (i - 0.0f) / (slices / 2)));
 				}
 
 				else
@@ -748,17 +766,17 @@ void Model::CreateModelSphere(int slices)
 					indices.push_back((i - 2) * slices + j + 1);
 					indices.push_back((i - 1) * slices + j + 1);
 
-					UV.push_back(glm::vec2(j / fslices, yPos + 0.5f));
-					UV.push_back(glm::vec2((j - 1) / fslices, befYPos + 0.5f));
-					UV.push_back(glm::vec2((j - 1) / fslices, yPos + 0.5f));
+					UV.push_back(glm::vec2(j / fslices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 1) / fslices, (i - 1.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 1) / fslices, (i - 0.0f) / (slices / 2)));
 
 					indices.push_back((i - 2) * slices + j + 1);
 					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
 					indices.push_back((i - 2) * slices + (j != slices ? j + 2 : 2));
 
-					UV.push_back(glm::vec2((j - 1) / fslices, befYPos + 0.5f));
-					UV.push_back(glm::vec2(j / fslices, yPos + 0.5f));
-					UV.push_back(glm::vec2(j / fslices, befYPos + 0.5f));
+					UV.push_back(glm::vec2((j - 1) / fslices, (i - 1.0f) / (slices / 2)));
+					UV.push_back(glm::vec2(j / fslices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2(j / fslices, (i - 1.0f) / (slices / 2)));
 				}
 
 				if (i == (slices / 2) - 1)
@@ -767,18 +785,14 @@ void Model::CreateModelSphere(int slices)
 					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
 					indices.push_back((i - 1) * slices + j + 1);
 
-					UV.push_back(glm::vec2((j - 1) / fslices, 1.f));
-					UV.push_back(glm::vec2(j / fslices, yPos + 0.5f));
-					UV.push_back(glm::vec2((j - 1) / fslices, yPos + 0.5f));
+					UV.push_back(glm::vec2((j - 0.5f) / fslices, 1.f));
+					UV.push_back(glm::vec2(j / fslices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 1) / fslices, (i - 0.0f) / (slices / 2)));
 				}
 			}
 		}
 	}
 
-	for (int i = 0; i < UV.size(); i++)
-	{
-		UV[i].x = 1 - UV[i].x;
-	}
 
 	for (int i = 0; i < indices.size(); i++)
 	{

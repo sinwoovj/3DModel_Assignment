@@ -71,7 +71,7 @@ int Level::Initialize()
 	
 	//Shader program
 	ReloadShaderProgram();
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 
 	//glFrontFace(GL_CW);
 
@@ -275,7 +275,7 @@ void Level::RotateCamY(float angle)
 
 void Level::ZoomCamZ(float size)
 {
-	cam.camPos.z += size;
+	cam.camPos += glm::normalize(cam.camTarget - cam.camPos) * size;
 }
 
 void Level::AddObject(Model* model)

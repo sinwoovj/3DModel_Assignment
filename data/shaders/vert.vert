@@ -20,10 +20,9 @@ void main()
    UV = vTexCoords; 
    Normal = vec3(normalize(m2w * vec4(vNormals, 0.0f)));
    
-   vec3 Nor = normalize(transpose(inverse(mat3(m2w))) * vNormals);
-   vec3 Tan = normalize(transpose(inverse(mat3(m2w))) * vTangent);
-   vec3 Bin = cross(Nor, Tan);
-   tbnMat = transpose(mat3(Tan, Bin, Nor)); //row major
+   vec3 Bin = cross(vTangent, vNormals);
+   //vec3 Bin = cross(vNormals, vTangent);
+   tbnMat = transpose(mat3(vTangent, Bin, vNormals)); //row major
 
    gl_Position = model * vPosition;
 }
