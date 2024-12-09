@@ -5,6 +5,7 @@ layout(line_strip, max_vertices = 6) out;
 
 in vec4 color[];
 in vec3 normal[];
+in vec3 tangent[];
 
 uniform mat4 model;
 

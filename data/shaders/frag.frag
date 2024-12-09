@@ -105,7 +105,8 @@ void main()
         tmp = spot * (diffuse + specular);
 
         //assemble result
-        asi += amb + (tmp * lAtt);
+        //asi += amb + (tmp * lAtt);
+        asi += specular;
     }
     FragColor = material.emission + vec4(asi, 1.0f);
 }

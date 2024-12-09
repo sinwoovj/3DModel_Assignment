@@ -63,7 +63,8 @@ translate 0 0 50
 rotation 0 0 0
 scale 30 30 30
 shininess 3
-mesh SPHERE
+#mesh SPHERE
+mesh CUBE
 normalMap data/textures/circles_normal_map.png
 
 #light data

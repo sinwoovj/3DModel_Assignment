@@ -310,7 +310,6 @@ void Model::CreateNorMap()
 {
 	// 텍스처 로드 및 생성
 	int width, height, nrChannels;
-	stbi_set_flip_vertically_on_load(1);
 
 	norTexData = stbi_load(transf.normalMap.c_str(), &width, &height, &nrChannels, 0);
 	if (stbi_failure_reason())
@@ -774,6 +773,11 @@ void Model::CreateModelSphere(int slices)
 				}
 			}
 		}
+	}
+
+	for (int i = 0; i < UV.size(); i++)
+	{
+		UV[i].x = 1 - UV[i].x;
 	}
 
 	for (int i = 0; i < indices.size(); i++)
