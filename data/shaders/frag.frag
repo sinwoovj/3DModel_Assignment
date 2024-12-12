@@ -7,12 +7,12 @@ in vec3 Normal;
 in vec3 FragPos;
 in mat3 tbnMat;
 in vec3 T;
-in vec3 VT;
-in vec3 VBT;
-in vec3 VTSN;
+in vec3 BT;
+in vec3 N;
 
 uniform sampler2D tex;
 uniform sampler2D normalMap;
+uniform sampler2D depthMap;
 uniform int render_mode;
 uniform mat4 m2w;
 
@@ -43,9 +43,17 @@ uniform LightSourceParameters light[10];
 uniform MaterialParameters material;
 uniform int activeCount;
 uniform vec3 cameraPos;
+uniform bool shadowCalculate;
+
 
 void main()
 { 
+    if(shadowCalculate)
+    {
+        float depthValue = texture(depthMap, UV).r;
+        FragColor = vec4(vec3(depthValue), 1.0);
+        return;
+    }
     vec4 matDiff = vec4(UV, 0.0, 1.0);
     switch(render_mode)
     {
@@ -53,16 +61,15 @@ void main()
             matDiff = texture(tex, UV);
             break;
         case 1: 
-            matDiff = vec4(VTSN ,1.0f); // Nor
+            matDiff = vec4(N ,1.0f); // Nor
             break;
         case 2:
-            matDiff = vec4(VT ,1.0f); // Tan
+            matDiff = vec4(T ,1.0f); // Tan
             break;
         case 3:
-            matDiff = vec4(VBT ,1.0f); // Btan
+            matDiff = vec4(BT ,1.0f); // Btan
             break;
     }
-
     vec3 norm = normalize(2.0 * texture(normalMap, UV).xyz - 0.1); //TS
     norm = normalize(inverse(tbnMat)* norm); //MS
     norm = normalize(mat3(m2w) * norm); //WS
@@ -127,6 +134,4 @@ void main()
         //asi += specular;
     }
     FragColor = vec4(asi, 1.0f);
-    //FragColor = vec4((T + vec3(0.5,0.5,0.5)) / 2, 1.0f);
-	//FragColor = texture(tex,UV);
 }

@@ -67,6 +67,7 @@ class CS300Parser
         std::vector<float> vertices;
         std::vector<int> pointIndeces;
 
+        glm::mat4x4 lightMat;
         glm::mat4x4 ComputeMatrix();
 
         Light();

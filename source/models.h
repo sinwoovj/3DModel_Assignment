@@ -35,15 +35,18 @@ struct Model
 
 	std::vector<int> pointIndeces;
 	std::vector<int> normalIndeces;
-	unsigned int VBO;
 	unsigned int VAO;
+	unsigned int VBO;
+	unsigned int depthMapFBO; // depthMapFBO for shadow
+	unsigned int depthMap;
 	unsigned int normal_tex;
+	unsigned int texobj;
 
 	unsigned char* texData;
 	unsigned char* norTexData;
 
-	unsigned int texobj;
-
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	
 	void Initialize();
 
 	void LoadModel();
@@ -54,6 +57,7 @@ struct Model
 
 	void InitVertexArray();
 	void CreateTexobj();
+	void CreateShadow();
 	void CreateNorMap();
 	void GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi);
 	void GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vector<glm::vec2>& uv);
@@ -62,6 +66,7 @@ struct Model
 
 private:
 	void InitModel();
+	void GetVertexAttr(const std::vector<glm::vec3>& vertices, const glm::vec2* vertexUVs, const int vertexIndices[3], const int uvIndices[3]);
 	//TODO
 	void CreateModelPlane();
 	void CreateModelCube();

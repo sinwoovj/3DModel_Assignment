@@ -452,10 +452,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="data\shaders\frag.frag" />
+    <None Include="data\shaders\frag_d.frag" />
     <None Include="data\shaders\frag_l.frag" />
     <None Include="data\shaders\frag_n.frag" />
     <None Include="data\shaders\geom_n.geo" />
     <None Include="data\shaders\vert.vert" />
+    <None Include="data\shaders\vert_d.vert" />
     <None Include="data\shaders\vert_l.vert" />
     <None Include="data\shaders\vert_n.vert" />
     <None Include="extern\glm\detail\func_common.inl" />

@@ -1376,5 +1376,7 @@
     <None Include="data\shaders\vert.vert" />
     <None Include="data\shaders\frag_l.frag" />
     <None Include="data\shaders\vert_l.vert" />
+    <None Include="data\shaders\frag_d.frag" />
+    <None Include="data\shaders\vert_d.vert" />
   </ItemGroup>
 </Project>

@@ -55,7 +55,7 @@ void Model::Initialize()
 
 	CreateNorMap();
 
-	InitVertexArray();
+	CreateShadow();
 }
 
 void Model::LoadModel()
@@ -169,6 +169,13 @@ void Model::InitModel()
 	if (vertices.size() == 0)
 		return;
 
+	//Gen FBO
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	//Gen VBO
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -189,7 +196,6 @@ void Model::InitModel()
 	//Assign UV
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
-	glBindVertexArray(0);
 
 	//Tangent
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(8 * sizeof(float)));
@@ -200,7 +206,7 @@ void Model::InitModel()
 
 }
 
-Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO(0), VAO(0), normal_tex(0), texData(nullptr), norTexData(nullptr)
+Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO(0), VAO(0), depthMapFBO(0), normal_tex(0), texData(nullptr), norTexData(nullptr)
 {
 	Initialize();
 }
@@ -209,7 +215,10 @@ Model::~Model()
 {
 	glDeleteBuffers(1, &VBO);
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteFramebuffers(1, &depthMapFBO);
 	glDeleteTextures(1, &normal_tex);
+	glDeleteTextures(1, &depthMap);
+	glDeleteTextures(1, &texobj);
 	texData = nullptr;
 	norTexData = nullptr;
 }
@@ -246,6 +255,12 @@ void Model::InitVertexArray()
 	//Sanity Check
 	if (vertices.size() == 0)
 		return;
+	//Gen FBO
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	//Gen VBO
 	glGenBuffers(1, &VBO);
@@ -318,6 +333,19 @@ void Model::CreateTexobj()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Model::CreateShadow()
+{
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
 }
 
 void Model::CreateNorMap()
@@ -393,27 +421,18 @@ void Model::GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vec
 		glm::vec3 p1 = v[vi[i]];
 		glm::vec3 p2 = v[vi[i + 1]];
 		glm::vec3 p3 = v[vi[i + 2]];
-		glm::vec2 A = uv[i];
-		glm::vec2 B = uv[i + 1];
-		glm::vec2 C = uv[i + 2];
+		glm::vec2 A = uv[vi[i]];
+		glm::vec2 B = uv[vi[i + 1]];
+		glm::vec2 C = uv[vi[i + 2]];
 
 		glm::vec3 V1 = p2 - p1;
 		glm::vec3 V2 = p3 - p1;
 		glm::vec2 Tc1 = B - A;
 		glm::vec2 Tc2 = C - A;
-		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
+		float d = Tc1.y * Tc2.x - Tc2.y * Tc1.x;
+		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (d == 0 ? 1 : d) );
 		tempT.push_back(T);
-		V1 = p1 - p2;
-		V2 = p3 - p2;
-		Tc1 = A - B;
-		Tc2 = C - B;
-		T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
 		tempT.push_back(T);
-		V1 = p1 - p3;
-		V2 = p2 - p3;
-		Tc1 = A - C;
-		Tc2 = B - C;
-		T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (Tc1.y * Tc2.x - Tc2.y * Tc1.x));
 		tempT.push_back(T);
 	}
 	if (Level::GetPtr()->normalAvg) //when make to average value
@@ -435,7 +454,7 @@ void Model::GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vec
 
 			for (int i = 0; i < vi.size(); i++)
 			{
-				if (glm::length(vertexNSum[vi[i]]) == 0)
+				if (glm::length(vertexNSum[vi[i]]) == 0.0f)
 					tangent.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
 				else
 					tangent.push_back(glm::normalize(vertexNSum[vi[i]] / (float)vertexNCount[vi[i]]));
@@ -457,88 +476,146 @@ bool Model::FindVertex(const std::vector<std::vector<glm::vec3>>& vertexNormals,
 
 	return false;
 }
+////TODO:
+//void Model::CreateModelPlane()
+//{
+//	//TODO: Points
+//	//버텍스
+//	std::vector<float> Plane_Vertex = {
+//		-0.5f, -0.5f, 0.0f,
+//		-0.5f,  0.5f, 0.0f,
+//		 0.5f,  0.5f, 0.0f,
+//		 0.5f, -0.5f, 0.0f,
+//	};
+//	std::vector<float> Plane_Normal = {
+//		0.0f, 0.0f, 1.0f,
+//		0.0f, 0.0f, 1.0f,
+//		0.0f, 0.0f, 1.0f,
+//		0.0f, 0.0f, 1.0f,
+//	};
+//	std::vector<float> Plane_TexCoord = {
+//		0.0f, 0.0f,
+//		0.0f, 1.0f,
+//		1.0f, 1.0f,
+//		1.0f, 0.0f,
+//	};
+//	//인덱스
+//	std::vector<int> Vertex_Indexs = {
+//		2, 1, 0,
+//		2, 0, 3
+//	};
+//	std::vector<int> Normal_Indexs = {
+//		2, 1, 0,
+//		2, 0, 3
+//	};
+//	std::vector<int> Texcoords_Indexs = {
+//		2, 1, 0,
+//		2, 0, 3
+//	};
+//	//TODO: UVs
+//
+//	//TODO: Normals
+//
+//	std::vector<glm::vec3> temp;
+//	std::vector<glm::vec3> tempN;
+//	std::vector<glm::vec2> tempUV;
+//
+//	//Save mesh points
+//	for (int i = 0; i < Plane_Vertex.size(); i += 3)
+//	{
+//		temp.push_back({ Plane_Vertex[i], Plane_Vertex[i + 1], Plane_Vertex[i + 2] });
+//	}
+//
+//	//Save mesh normals
+//	for (int i = 0; i < Plane_Normal.size(); i += 3)
+//	{
+//		tempN.push_back({ Plane_Normal[i], Plane_Normal[i + 1], Plane_Normal[i + 2] });
+//	}
+//
+//	//Save UV
+//	for (int i = 0; i < Plane_TexCoord.size(); i += 2)
+//	{
+//		tempUV.push_back({ Plane_TexCoord[i], Plane_TexCoord[i + 1] });
+//	}
+//
+//	//(vertex indexes)
+//	for (auto p : Vertex_Indexs)
+//	{
+//		//Load vertexes
+//		points.push_back(temp[p]);
+//	}
+//	for (auto p : Normal_Indexs)
+//	{
+//		//Load Normals
+//		normals.push_back(tempN[p]);
+//	}
+//	for (auto p : Texcoords_Indexs)
+//	{
+//		//Load Indexes
+//		UV.push_back(tempUV[p]);
+//	}
+//
+//	//GetTangent(temp, Vertex_Indexs, UV);
+//	GetTangent(points, Vertex_Indexs, UV);
+//}
+void Model::GetVertexAttr(const std::vector<glm::vec3>& vertices, const glm::vec2* vertexUVs, const int vertexIndices[3], const int uvIndices[3])
+{
+	glm::vec3 v0 = vertices[vertexIndices[0]];
+	glm::vec3 v1 = vertices[vertexIndices[1]];
+	glm::vec3 v2 = vertices[vertexIndices[2]];
+
+	glm::vec2 uv0 = vertexUVs[uvIndices[0]];
+	glm::vec2 uv1 = vertexUVs[uvIndices[1]];
+	glm::vec2 uv2 = vertexUVs[uvIndices[2]];
+
+	glm::vec3 normal = glm::normalize(glm::cross(v0 - v1, v1 - v2));
+
+	glm::vec3 edge1 = v1 - v0;
+	glm::vec3 edge2 = v2 - v0;
+	glm::vec2 deltaUV1 = uv1 - uv0;
+	glm::vec2 deltaUV2 = uv2 - uv0;
+	glm::vec3 t = (deltaUV2.y * edge1 - deltaUV1.y * edge2) / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+	for (int i = 0; i < 3; i++)
+	{
+		points.push_back(vertices[vertexIndices[i]]);
+		UV.push_back(vertexUVs[uvIndices[i]]);
+		normals.push_back(normal);
+		tangent.push_back(t);
+
+		//allVertexIndices.push_back(vertexIndices[i]);
+	}
+}
+
 //TODO:
 void Model::CreateModelPlane()
 {
-	//TODO: Points
-	//버텍스
-	std::vector<float> Plane_Vertex = {
-		 0.5f,  0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		-0.5f,  0.5f, 0.0f,
-	};
-	std::vector<float> Plane_Normal = {
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, 1.0f,
-	};
-	std::vector<float> Plane_TexCoord = {
-		 1.f,  1.f,
-		 1.f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 1.f
-	};
-	//인덱스
-	std::vector<int> Vertex_Indexs = {
-		1, 0, 2,
-		2, 0, 3
-	};
-	std::vector<int> Normal_Indexs = {
-		1, 0, 2,
-		2, 0, 3
-	};
-	std::vector<int> Texcoords_Indexs = {
-		1, 0, 2,
-		2, 0, 3
-	};
-	//TODO: UVs
-
-	//TODO: Normals
-
-	std::vector<glm::vec3> temp;
-	std::vector<glm::vec3> tempN;
-	std::vector<glm::vec2> tempUV;
-
-	//Save mesh points
-	for (int i = 0; i < Plane_Vertex.size(); i += 3)
+	std::vector<glm::vec3> vertices =
 	{
-		temp.push_back({ Plane_Vertex[i], Plane_Vertex[i + 1], Plane_Vertex[i + 2] });
+		glm::vec3(-0.5f, -0.5f, 0.0f),
+		glm::vec3(0.5f, -0.5f, 0.0f),
+		glm::vec3(0.5f, 0.5f, 0.0f),
+		glm::vec3(-0.5f, 0.5f, 0.0f)
+	};
+
+	glm::vec2 uv[4] =
+	{
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(0.0f, 1.0f),
+		glm::vec2(1.0f, 1.0f),
+	};
+
+	{
+		int ind[3] = { 0, 1, 2 };
+		GetVertexAttr(vertices, uv, ind, ind);
 	}
 
-	//Save mesh normals
-	for (int i = 0; i < Plane_Normal.size(); i += 3)
 	{
-		tempN.push_back({ Plane_Normal[i], Plane_Normal[i + 1], Plane_Normal[i + 2] });
+		int ind[3] = { 0, 2, 3 };
+		GetVertexAttr(vertices, uv, ind, ind);
 	}
-
-	//Save UV
-	for (int i = 0; i < Plane_TexCoord.size(); i += 2)
-	{
-		tempUV.push_back({ Plane_TexCoord[i], Plane_TexCoord[i + 1] });
-	}
-
-	//(vertex indexes)
-	for (auto p : Vertex_Indexs)
-	{
-		//Load vertexes
-		points.push_back(temp[p]);
-	}
-	for (auto p : Normal_Indexs)
-	{
-		//Load Normals
-		normals.push_back(tempN[p]);
-	}
-	for (auto p : Texcoords_Indexs)
-	{
-		//Load Indexes
-		UV.push_back(tempUV[p]);
-	}
-
-	GetTangent(temp, Vertex_Indexs, UV);
 }
-
 void Model::CreateModelCube()
 {
 	Level* ptr = Level::GetPtr();

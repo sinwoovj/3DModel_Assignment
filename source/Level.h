@@ -17,6 +17,7 @@ struct Level
 	int Initialize();
 	void Run();
 	void Cleanup();
+	void SetMatrix();
 
 	static Level* GetPtr();
 	static void DeletePtr();
@@ -29,6 +30,7 @@ struct Level
 	std::vector<Model*> allObjects;
 	std::vector<CS300Parser::Light*> allLights;
 private:
+	void Shadow(Model*);
 	void Render(Model*);
 	void Lighting(float time);
 	Level();
@@ -39,6 +41,7 @@ private:
 	static Level* ptr;
 
 	GLFWwindow* window;
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
 
 	//keyState
@@ -51,20 +54,6 @@ private:
 		int D = GLFW_RELEASE;
 		int Q = GLFW_RELEASE;
 		int E = GLFW_RELEASE;
-		
-		/*
-		TODO: ADD/DECRESE SLICES
-		 +/z - Increase Slices. Reloads Models
-		 -/x - Decrease Slices. Reloads Models
-		TODO: TRIGGER WIREFRAME
-		 m - Wireframe On/Off
-		TODO: TRIGGER TEXTURE
-		 T - Texture Mapping On/Off
-		TODO: TRIGGER NORMALS RENDER
-		 N - Rendering Normals On/Off
-		TODO: TRIGGER NORMALS AVERAGE
-		 F - Average Normals On/Off
-		*/
 	};
 	void KeyCheck();
 public:
@@ -74,6 +63,7 @@ public:
 	int render_mode;
 	//shaders
 	cg::Program* shader;
+	cg::Program* depth_shader;
 	cg::Program* lighting_shader;
 	cg::Program* normal_shader;
 private:

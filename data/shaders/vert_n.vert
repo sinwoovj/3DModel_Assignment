@@ -4,11 +4,16 @@ layout(location = 1) in vec3 vNormals;
 layout(location = 2) in vec2 vTextCoords;
 layout(location = 3) in vec3 vTangent;
 
-out vec3 normal;
+uniform mat4 m2w;
+uniform mat4 viewMat;
+uniform mat4 projMat;
+
 out vec4 red;
 out vec4 green;
 out vec4 blue;
-out vec3 tangent;
+out vec3 T;
+out vec3 BT; 
+out vec3 N;
 
 void main()
 {
@@ -17,6 +22,7 @@ void main()
     red = vec4(1.0, 0.0, 0.0, 1.0);
     green = vec4(0.0, 1.0, 0.0, 1.0);
     blue = vec4(0.0, 0.0, 1.0, 1.0);
-    normal = vNormals;
-    tangent = vTangent;
+    T = normalize(vTangent);
+    BT = normalize(cross(vNormals, vTangent));
+    N = normalize(vNormals);
 }

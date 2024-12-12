@@ -45,7 +45,7 @@ int Level::Initialize()
 
 	//Load Scene
 	CS300Parser parser;
-	parser.LoadDataFromFile("data/scenes/scene_A2.txt");
+	parser.LoadDataFromFile("data/scenes/scene_A3.txt");
 	
 	//Convert from parser->obj to Model
 	for (auto o : parser.objects)
@@ -75,8 +75,6 @@ int Level::Initialize()
 
 	//glFrontFace(GL_CW);
 
-	glEnable(GL_DEPTH_TEST);
-
 	return 0;
 }
 
@@ -92,45 +90,60 @@ void Level::Run()
 	{	
 		KeyCheck();
 
-		// Render graphics here
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		//use shader program
-		glUseProgram(shader->handle);
+		SetMatrix();
 		
-
-		//Calculate Camera Matrix
-		glm::vec3 dir = glm::normalize(cam.camTarget - cam.camPos);
-		dir = -dir;
-		glm::vec3 r = glm::normalize(glm::cross(cam.camUp, dir));
-		glm::mat4 V = glm::mat4(1);
-		glm::vec3 up = glm::normalize(glm::cross(dir, r));
-
-
-		V[0][0] = r.x;
-		V[1][0] = r.y;
-		V[2][0] = r.z;
-		V[0][1] = up.x;
-		V[1][1] = up.y;
-		V[2][1] = up.z;
-		V[0][2] = dir.x;
-		V[1][2] = dir.y;
-		V[2][2] = dir.z;
-		V[3][0] = -dot(r,cam.camPos );
-		V[3][1] = -dot(up, cam.camPos);
-		V[3][2] = -dot(dir, cam.camPos);
-
-
-		//cam.ViewMat = glm::lookAt(cam.camPos, cam.camTarget, up);
-		cam.ViewMat = V;
-
-		//The image is mirrored on X
-		cam.ProjMat = glm::perspective(glm::radians(cam.fovy), cam.width / cam.height, cam.nearPlane, cam.farPlane);
-
 		auto currentTime = clock::now();
 		std::chrono::duration<float> deltaTime = currentTime - lastTime;
 		lastTime = currentTime;
 		time += deltaTime.count();
+
+		glUseProgram(shader->handle);
+		shader->setUniform("projMat", cam.ProjMat);
+		shader->setUniform("viewMat", cam.ViewMat);
+		glUseProgram(normal_shader->handle);
+		normal_shader->setUniform("viewMat", cam.ViewMat);
+		normal_shader->setUniform("projMat", cam.ProjMat);
+		
+		glUseProgram(depth_shader->handle);
+		for (auto l : allLights)
+		{
+			glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, cam.nearPlane, cam.farPlane);
+			glm::mat4 lightView = l->lightMat;
+			glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+			shader->setUniform("lightMat", l->lightMat);
+			depth_shader->setUniform("lightSpaceMatrix", lightSpaceMatrix);
+		}
+
+		glUseProgram(shader->handle);
+		glEnable(GL_DEPTH_TEST);
+		glDepthRange(0.0, 1.0);
+		glClearDepthf(1.0F);
+		//first rendering for shadow
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		for (auto o : allObjects)
+		{
+			//use obj FBO
+			glm::vec3 temp = o->transf.st_pos;
+
+			//Animation Update
+			for (auto anim : o->transf.anims)
+			{
+				temp = anim.Update(temp, time);
+			}
+			o->transf.pos = temp;
+
+			//Shadow the object
+			Shadow(o);
+		}
+
+		glUseProgram(shader->handle);
+		// Render graphics here
+		glViewport(0, 0, W_WIDTH, W_HEIGHT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		shader->setUniform("shadowCalculate", false);
+		shader->setUniform("lightView", false);
 		//For each object in the level
 		for (auto o : allObjects)
 		{
@@ -158,12 +171,35 @@ void Level::Run()
 		bool showLighting = true;
 		if (showLighting)
 		{
-
 			Lighting(time);
 		}
 
-		glUseProgram(0);
+		glUseProgram(shader->handle);
+		//sub Screen
+		glViewport(0, 0, 250, 250);
+		glClear(GL_DEPTH_BUFFER_BIT);
 
+		shader->setUniform("shadowCalculate", true);
+		shader->setUniform("lightView", true);
+		//For each object in the level
+
+		for (auto o : allObjects)
+		{
+			glm::vec3 temp = o->transf.st_pos;
+
+			//Animation Update
+			for (auto anim : o->transf.anims)
+			{
+				temp = anim.Update(temp, time);
+			}
+			o->transf.pos = temp;
+
+			//Render the object
+			Render(o);
+		}
+
+		glDisable(GL_DEPTH_TEST);
+		glUseProgram(0);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -178,6 +214,59 @@ void Level::Cleanup()
 	glfwTerminate();
 
 	DeletePtr();
+}
+
+void Level::SetMatrix()
+{
+	//Calculate Camera Matrix
+	glm::vec3 dir = glm::normalize(cam.camTarget - cam.camPos);
+	dir = -dir;
+	glm::vec3 r = glm::normalize(glm::cross(cam.camUp, dir));
+	glm::mat4 V = glm::mat4(1);
+	glm::vec3 up = glm::normalize(glm::cross(dir, r));
+
+	V[0][0] = r.x;
+	V[1][0] = r.y;
+	V[2][0] = r.z;
+	V[0][1] = up.x;
+	V[1][1] = up.y;
+	V[2][1] = up.z;
+	V[0][2] = dir.x;
+	V[1][2] = dir.y;
+	V[2][2] = dir.z;
+	V[3][0] = -dot(r, cam.camPos);
+	V[3][1] = -dot(up, cam.camPos);
+	V[3][2] = -dot(dir, cam.camPos);
+
+	//cam.ViewMat = glm::lookAt(cam.camPos, cam.camTarget, up);
+	cam.ViewMat = V;
+
+	//The image is mirrored on X
+	cam.ProjMat = glm::perspective(glm::radians(cam.fovy), cam.width / cam.height, cam.nearPlane, cam.farPlane);
+
+	//Calculate Light Matrix
+	for (auto lgt : allLights)
+	{
+		glm::vec3 dir = lgt->dir;
+		dir = -dir;
+		glm::vec3 r = glm::normalize(glm::cross(glm::vec3(0, 1, 0), dir)); //cam.camUp = 0,1,0
+		glm::mat4 V = glm::mat4(1);
+		glm::vec3 up = glm::normalize(glm::cross(dir, r));
+
+		V[0][0] = r.x;
+		V[1][0] = r.y;
+		V[2][0] = r.z;
+		V[0][1] = up.x;
+		V[1][1] = up.y;
+		V[2][1] = up.z;
+		V[0][2] = dir.x;
+		V[1][2] = dir.y;
+		V[2][2] = dir.z;
+		V[3][0] = -dot(r, lgt->pos);
+		V[3][1] = -dot(up, lgt->pos);
+		V[3][2] = -dot(dir, lgt->pos);
+		lgt->lightMat = V;
+	}
 }
 
 Level* Level::GetPtr()
@@ -210,8 +299,12 @@ void Level::ReloadShaderProgram()
 		delete lighting_shader;
 	if (normal_shader)
 		delete normal_shader;
+	if (depth_shader)
+		delete depth_shader;
 	std::stringstream v;
 	std::stringstream f;
+	std::stringstream dv;
+	std::stringstream df;
 	std::stringstream lv;
 	std::stringstream lf;
 	std::stringstream nv;
@@ -244,8 +337,15 @@ void Level::ReloadShaderProgram()
 	file.open("data/shaders/geom_n.geo");
 	ng << file.rdbuf();
 	file.close();
+	file.open("data/shaders/vert_d.vert");
+	dv << file.rdbuf();
+	file.close();
+	file.open("data/shaders/frag_d.frag");
+	df << file.rdbuf();
+	file.close();
 
 	shader = new cg::Program(v.str().c_str(), f.str().c_str());
+	depth_shader = new cg::Program(dv.str().c_str(), df.str().c_str());
 	lighting_shader = new cg::Program(lv.str().c_str(), lf.str().c_str());
 	normal_shader = new cg::Program(nv.str().c_str(), nf.str().c_str(), ng.str().c_str());
 }
@@ -288,8 +388,22 @@ void Level::AddLights(CS300Parser::Light* light)
 	allLights.push_back(light);
 }
 
+void Level::Shadow(Model* obj)
+{
+	glUseProgram(depth_shader->handle);
+	glBindFramebuffer(GL_FRAMEBUFFER, obj->depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, obj->depthMap, 0);
+	depth_shader->setUniform("model", cam.ProjMat * cam.ViewMat * obj->ComputeMatrix());
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glUseProgram(0);
+}
+
 void Level::Render(Model* obj)
 {
+	glUseProgram(shader->handle);
 	//use obj VBO
 	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO);
 	//use obj VAO
@@ -303,18 +417,19 @@ void Level::Render(Model* obj)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, obj->texobj);
 
+	shader->setUniform("depthMap", 2);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, obj->depthMap);
+
 	//Send model matrix to the shader
 	glm::mat4x4 m2w = obj->ComputeMatrix();
-	glm::mat4x4 m2v = cam.ViewMat * obj->ComputeMatrix();
 
 	//Send view matrix to the shader
 	normal_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
-	shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
+	normal_shader->setUniform("m2w", m2w);
 	shader->setUniform("m2w", m2w);
-	shader->setUniform("m2v", m2v);
 	shader->setUniform("render_mode", render_mode);
 	shader->setUniform("cameraPos", cam.camPos);
-	
 
 
 	//Material
@@ -331,6 +446,7 @@ void Level::Render(Model* obj)
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	glUseProgram(0);
 }
 
 void Level::Lighting(float time)
@@ -414,11 +530,11 @@ void Level::Lighting(float time)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}
-	
+	glUseProgram(0);
 }
 
 
-Level::Level() : window(nullptr), shader(nullptr), lighting_shader(nullptr), normal_shader(nullptr), render_mode(0)
+Level::Level() : window(nullptr), shader(nullptr), depth_shader(nullptr), lighting_shader(nullptr), normal_shader(nullptr), render_mode(0)
 {
 
 }
