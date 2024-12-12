@@ -30,7 +30,7 @@ struct Level
 	std::vector<Model*> allObjects;
 	std::vector<CS300Parser::Light*> allLights;
 private:
-	void Shadow(Model*);
+	bool Shadow(Model*);
 	void Render(Model*);
 	void Lighting(float time);
 	Level();

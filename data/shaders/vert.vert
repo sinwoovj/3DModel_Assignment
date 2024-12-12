@@ -14,7 +14,6 @@ uniform bool lightView;
 
 out vec2 UV; //v_texCoords
 out vec3 FragPos; //wP
-out vec3 Normal; //wN
 out vec3 T; //tan
 out vec3 BT; //btan view space
 out vec3 N; //nor in ts view space
@@ -24,13 +23,11 @@ void main()
 {
     FragPos = (m2w * vPosition).xyz; 
     
-    UV = vTexCoords; 
-    Normal = vec3(normalize(m2w * vec4(vNormals, 0.0f)));
+    UV = vTexCoords;
     T = normalize(vTangent);
-    vec3 Bin = normalize(cross(T, vNormals));
-    tbnMat = transpose(mat3(T, Bin, vNormals)); //row major
     BT = normalize(cross(vTangent, vNormals));
     N = normalize(vNormals);
+    tbnMat = transpose(mat3(T, BT, N)); //row major
     
     if(lightView)
     {

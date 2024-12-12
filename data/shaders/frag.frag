@@ -3,7 +3,6 @@
 out vec4 FragColor;
 
 in vec2 UV;
-in vec3 Normal;
 in vec3 FragPos;
 in mat3 tbnMat;
 in vec3 T;

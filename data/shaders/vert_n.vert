@@ -5,8 +5,6 @@ layout(location = 2) in vec2 vTextCoords;
 layout(location = 3) in vec3 vTangent;
 
 uniform mat4 m2w;
-uniform mat4 viewMat;
-uniform mat4 projMat;
 
 out vec4 red;
 out vec4 green;

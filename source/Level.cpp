@@ -1,5 +1,5 @@
 #include <GL/glew.h>
-
+#include <iostream>
 #include "Level.h"
 #include "CS300Parser.h"
 #include "Controls.h"
@@ -100,21 +100,18 @@ void Level::Run()
 		glUseProgram(shader->handle);
 		shader->setUniform("projMat", cam.ProjMat);
 		shader->setUniform("viewMat", cam.ViewMat);
-		glUseProgram(normal_shader->handle);
-		normal_shader->setUniform("viewMat", cam.ViewMat);
-		normal_shader->setUniform("projMat", cam.ProjMat);
 		
-		glUseProgram(depth_shader->handle);
-		for (auto l : allLights)
+		if (!allLights.empty())
 		{
 			glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, cam.nearPlane, cam.farPlane);
-			glm::mat4 lightView = l->lightMat;
+			glm::mat4 lightView = allLights.front()->lightMat;
 			glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-			shader->setUniform("lightMat", l->lightMat);
+			glUseProgram(shader->handle);
+			shader->setUniform("lightMat", lightView);
+			glUseProgram(depth_shader->handle);
 			depth_shader->setUniform("lightSpaceMatrix", lightSpaceMatrix);
 		}
 
-		glUseProgram(shader->handle);
 		glEnable(GL_DEPTH_TEST);
 		glDepthRange(0.0, 1.0);
 		glClearDepthf(1.0F);
@@ -134,14 +131,15 @@ void Level::Run()
 			o->transf.pos = temp;
 
 			//Shadow the object
-			Shadow(o);
+			if (!Shadow(o))
+				std::cout << "bad" << std::endl;
 		}
 
-		glUseProgram(shader->handle);
 		// Render graphics here
 		glViewport(0, 0, W_WIDTH, W_HEIGHT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		glUseProgram(shader->handle);
 		shader->setUniform("shadowCalculate", false);
 		shader->setUniform("lightView", false);
 		//For each object in the level
@@ -157,6 +155,7 @@ void Level::Run()
 			o->transf.pos = temp;
 
 			//Render the object
+			glUseProgram(shader->handle);
 			Render(o);
 		}
 		if (showNormal)
@@ -174,11 +173,11 @@ void Level::Run()
 			Lighting(time);
 		}
 
-		glUseProgram(shader->handle);
 		//sub Screen
 		glViewport(0, 0, 250, 250);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
+		glUseProgram(shader->handle);
 		shader->setUniform("shadowCalculate", true);
 		shader->setUniform("lightView", true);
 		//For each object in the level
@@ -195,6 +194,7 @@ void Level::Run()
 			o->transf.pos = temp;
 
 			//Render the object
+			glUseProgram(shader->handle);
 			Render(o);
 		}
 
@@ -388,22 +388,26 @@ void Level::AddLights(CS300Parser::Light* light)
 	allLights.push_back(light);
 }
 
-void Level::Shadow(Model* obj)
+bool Level::Shadow(Model* obj)
 {
 	glUseProgram(depth_shader->handle);
-	glBindFramebuffer(GL_FRAMEBUFFER, obj->depthMapFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, obj->depthMap, 0);
 	depth_shader->setUniform("model", cam.ProjMat * cam.ViewMat * obj->ComputeMatrix());
+	glBindFramebuffer(GL_FRAMEBUFFER, obj->depthMapFBO);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, obj->depthMap, 0);
 	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
 
+	bool res = false;
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+	{
+		res = true;
+	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(0);
+	return res;
 }
 
 void Level::Render(Model* obj)
 {
-	glUseProgram(shader->handle);
 	//use obj VBO
 	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO);
 	//use obj VAO
@@ -425,8 +429,10 @@ void Level::Render(Model* obj)
 	glm::mat4x4 m2w = obj->ComputeMatrix();
 
 	//Send view matrix to the shader
+	glUseProgram(normal_shader->handle);
 	normal_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
 	normal_shader->setUniform("m2w", m2w);
+	glUseProgram(shader->handle);
 	shader->setUniform("m2w", m2w);
 	shader->setUniform("render_mode", render_mode);
 	shader->setUniform("cameraPos", cam.camPos);
