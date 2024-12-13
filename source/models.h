@@ -33,6 +33,9 @@ struct Model
 
 	std::vector<float> vertices;
 
+	std::vector<int> allVertexIndices;
+	std::vector<int> allUVIndices;
+
 	std::vector<int> pointIndeces;
 	std::vector<int> normalIndeces;
 	unsigned int VAO;
@@ -59,8 +62,8 @@ struct Model
 	void CreateTexobj();
 	void CreateShadow();
 	void CreateNorMap();
-	void GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi);
-	void GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vector<glm::vec2>& uv);
+	void GetNormal(std::vector<glm::vec3>& v, std::vector<int>& ind);
+	void GetTangent(std::vector<glm::vec3>& v, std::vector<glm::vec2>& uv, std::vector<int>& ind);
 	bool FindVertex(const std::vector<std::vector<glm::vec3>>& vertexNormals, const int ind, const glm::vec3& normal);
 	static int slices;
 

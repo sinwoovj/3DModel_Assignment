@@ -119,7 +119,7 @@ void Model::LoadModel()
 				UV.push_back(tempUV[p.texcoord_index]);
 			}
 			
-			GetTangent(temp, tempIndexes,UV);
+			GetTangent(points,UV, tempIndexes);
 		}
 
 	}
@@ -367,15 +367,15 @@ void Model::CreateNorMap()
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
+void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& ind)
 {
 	std::vector<glm::vec3> tempN;
 
-	for (int i = 0; i < vi.size(); i += 3)
+	for (int i = 0; i < v.size(); i += 3)
 	{
-		glm::vec3 v1 = v[vi[i]];
-		glm::vec3 v2 = v[vi[i + 1]];
-		glm::vec3 v3 = v[vi[i + 2]];
+		glm::vec3 v1 = v[i];
+		glm::vec3 v2 = v[i + 1];
+		glm::vec3 v3 = v[i + 2];
 
 		glm::vec3 normal = glm::normalize(glm::cross(v1 - v2, v2 - v3));
 
@@ -389,14 +389,14 @@ void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
 	{
 		std::vector<std::set<glm::vec3, Vec3Compare>> vertexNSet(v.size());
 
-		for (int i = 0; i < vi.size(); i++)
+		for (int i = 0; i < v.size(); i++)
 		{
-			vertexNSet[vi[i]].insert(tempN[i]);
+			vertexNSet[ind[i]].insert(tempN[i]);
 		}
 
-		for (int i = 0; i < vi.size(); i++)
+		for (int i = 0; i < v.size(); i++)
 		{
-			normals.push_back(glm::normalize(std::accumulate(vertexNSet[vi[i]].begin(), vertexNSet[vi[i]].end(), glm::vec3(0.0f)) / (float)vertexNSet[vi[i]].size()));
+			normals.push_back(glm::normalize(std::accumulate(vertexNSet[ind[i]].begin(), vertexNSet[ind[i]].end(), glm::vec3(0.0f)) / (float)vertexNSet[ind[i]].size()));
 		}
 	}
 	else
@@ -405,55 +405,55 @@ void Model::GetNormal(std::vector<glm::vec3>& v, std::vector<int>& vi)
 	}
 }
 
-void Model::GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vector<glm::vec2>& uv) //vertex, vertex indices, UV
+void Model::GetTangent(std::vector<glm::vec3>& v, std::vector<glm::vec2>& uv, std::vector<int>& ind)
 {
 	std::vector<glm::vec3> tempT;
 
 	//Save Tangent
-	for (int i = 0; i < vi.size(); i+=3)
+	for (int i = 0; i < v.size(); i += 3)
 	{
 		//POINT
-		glm::vec3 p1 = v[vi[i]];
-		glm::vec3 p2 = v[vi[i + 1]];
-		glm::vec3 p3 = v[vi[i + 2]];
-		glm::vec2 A = uv[vi[i]];
-		glm::vec2 B = uv[vi[i + 1]];
-		glm::vec2 C = uv[vi[i + 2]];
+		glm::vec3 p1 = v[i];
+		glm::vec3 p2 = v[i + 1];
+		glm::vec3 p3 = v[i + 2];
+		glm::vec2 A = uv[i];
+		glm::vec2 B = uv[i + 1];
+		glm::vec2 C = uv[i + 2];
 
 		glm::vec3 V1 = p2 - p1;
 		glm::vec3 V2 = p3 - p1;
 		glm::vec2 Tc1 = B - A;
 		glm::vec2 Tc2 = C - A;
-		float d = Tc1.y * Tc2.x - Tc2.y * Tc1.x;
-		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / (d == 0 ? 1 : d) );
+		float d = Tc1.y * Tc2.x - Tc2.y * Tc1.x; 
+
+		glm::vec3 T = glm::vec3((Tc1.y * V2 - Tc2.y * V1) / d);
+		if (d == 0)
+			T = glm::vec3(1, 0, 0);
+
 		tempT.push_back(T);
 		tempT.push_back(T);
 		tempT.push_back(T);
 	}
 	if (Level::GetPtr()->normalAvg) //when make to average value
 	{
+		std::vector<std::set<glm::vec3, Vec3Compare>> vertexNSet(v.size());
+
+		for (int i = 0; i < v.size(); i++)
 		{
-			std::vector<std::vector<glm::vec3>> vertexNormals(v.size());
-			std::vector<glm::vec3> vertexNSum(v.size());
-			std::vector<int> vertexNCount(v.size());
+			vertexNSet[ind[i]].insert(tempT[i]);
+		}
 
-			for (int i = 0; i < vi.size(); i++)
-			{
-				if (!FindVertex(vertexNormals, vi[i], tempT[i]))
-				{
-					vertexNormals[vi[i]].push_back(tempT[i]);
-					vertexNSum[vi[i]] += tempT[i];
-					vertexNCount[vi[i]]++;
-				}
-			}
-
-			for (int i = 0; i < vi.size(); i++)
-			{
-				if (glm::length(vertexNSum[vi[i]]) == 0.0f)
-					tangent.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-				else
-					tangent.push_back(glm::normalize(vertexNSum[vi[i]] / (float)vertexNCount[vi[i]]));
-			}
+		for (int i = 0; i < v.size(); i++)
+		{
+			float size = (float)vertexNSet[ind[i]].size();
+			glm::vec3 tmp = std::accumulate(vertexNSet[ind[i]].begin(), vertexNSet[ind[i]].end(), glm::vec3(0.0f));
+			if (tmp.x != 0) tmp.x /= size;
+			if (tmp.y != 0) tmp.y /= size;
+			if (tmp.z != 0) tmp.z /= size;
+			if (tmp != glm::vec3(0))
+				tangent.push_back(glm::normalize(tmp));
+			else
+				tangent.push_back(glm::vec3(1.0,0.0,0.0));
 		}
 	}
 	else
@@ -461,6 +461,7 @@ void Model::GetTangent(std::vector<glm::vec3>& v, std::vector<int>& vi, std::vec
 		tangent = tempT;
 	}
 }
+
 bool Model::FindVertex(const std::vector<std::vector<glm::vec3>>& vertexNormals, const int ind, const glm::vec3& normal)
 {
 	for (auto n : vertexNormals[ind])
@@ -578,7 +579,8 @@ void Model::GetVertexAttr(const std::vector<glm::vec3>& vertices, const glm::vec
 		normals.push_back(normal);
 		tangent.push_back(t);
 
-		//allVertexIndices.push_back(vertexIndices[i]);
+		allVertexIndices.push_back(vertexIndices[i]);
+		allUVIndices.push_back(uvIndices[i]);
 	}
 }
 
@@ -684,8 +686,8 @@ void Model::CreateModelCube()
 		i++;
 	}
 
-	GetNormal(Cube_Vertex, Vertex_Indexs);
-	GetTangent(Cube_Vertex, Vertex_Indexs, UV);
+	GetNormal(points, Vertex_Indexs);
+	GetTangent(points, UV, Vertex_Indexs);
 }
 
 void Model::CreateModelCone(int slices)
@@ -737,8 +739,8 @@ void Model::CreateModelCone(int slices)
 		}
 	}
 	
-	GetNormal(Cone_Vertex, Vertex_Indexs);
-	GetTangent(Cone_Vertex, Vertex_Indexs, UV);
+	GetNormal(points, Vertex_Indexs);
+	GetTangent(points, UV, Vertex_Indexs);
 }
 
 void Model::CreateModelCylinder(int slices)
@@ -808,9 +810,9 @@ void Model::CreateModelCylinder(int slices)
 			Vertex_Indexs.push_back(int(i / slices) == 0 ? prsc + slices : (i - slices + 1) % slices);
 		}
 	}
-	GetNormal(Cylinder_Vertex, Vertex_Indexs);
 
-	GetTangent(Cylinder_Vertex, Vertex_Indexs, UV);
+	GetNormal(points, Vertex_Indexs);
+	GetTangent(points, UV, Vertex_Indexs);
 }
 
 void Model::CreateModelSphere(int slices)
@@ -837,62 +839,61 @@ void Model::CreateModelSphere(int slices)
 		for (int j = 0; j <= slices; j++)
 		{
 			if (j != slices)
+			{
 				temp.push_back(glm::vec3(radius * cosf(j * angleStep), yPos, radius * sinf(j * angleStep)));
+			}
 
 			if (j != 0)
 			{
 				if (i == 1) // triangle
 				{
 					indices.push_back(1);
-					indices.push_back(j + 1);
-					indices.push_back(j != slices ? j + 2 : 2);
+					indices.push_back((i - 1) * slices + (j + 1));
+					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
 
-					//UV.push_back(glm::vec2((j - 1) / fslices, 0.0f));
-					//UV.push_back(glm::vec2((j - 0.5) / fslices, yPos + 0.5f));
-					UV.push_back(glm::vec2((j - 0.5f) / fslices, 0.0f));
-					UV.push_back(glm::vec2((j - 1) / fslices, (i - 0.0f) / (slices / 2)));
-					UV.push_back(glm::vec2(j / fslices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 0.5f) / slices, 0.0f));
+					UV.push_back(glm::vec2((j - 1.0f) / slices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 0.0f) / slices, (i - 0.0f) / (slices / 2)));
 				}
 
 				else
 				{
+					indices.push_back((i - 2) * slices + (j + 1));
+					indices.push_back((i - 1) * slices + (j + 1));
 					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
-					indices.push_back((i - 2) * slices + j + 1);
-					indices.push_back((i - 1) * slices + j + 1);
 
-					UV.push_back(glm::vec2(j / fslices, (i - 0.0f) / (slices / 2)));
-					UV.push_back(glm::vec2((j - 1) / fslices, (i - 1.0f) / (slices / 2)));
-					UV.push_back(glm::vec2((j - 1) / fslices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 1.0f) / slices, (i - 1.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 1.0f) / slices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 0.0f) / slices, (i - 0.0f) / (slices / 2)));
 
-					indices.push_back((i - 2) * slices + j + 1);
 					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
 					indices.push_back((i - 2) * slices + (j != slices ? j + 2 : 2));
+					indices.push_back((i - 2) * slices + (j + 1));
 
-					UV.push_back(glm::vec2((j - 1) / fslices, (i - 1.0f) / (slices / 2)));
-					UV.push_back(glm::vec2(j / fslices, (i - 0.0f) / (slices / 2)));
-					UV.push_back(glm::vec2(j / fslices, (i - 1.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 0.0f) / slices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 0.0f) / slices, (i - 1.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 1.0f) / slices, (i - 1.0f) / (slices / 2)));
 				}
 
 				if (i == (slices / 2) - 1)
 				{
 					indices.push_back(0);
 					indices.push_back((i - 1) * slices + (j != slices ? j + 2 : 2));
-					indices.push_back((i - 1) * slices + j + 1);
+					indices.push_back((i - 1) * slices + (j + 1));
 
-					UV.push_back(glm::vec2((j - 0.5f) / fslices, 1.f));
-					UV.push_back(glm::vec2(j / fslices, (i - 0.0f) / (slices / 2)));
-					UV.push_back(glm::vec2((j - 1) / fslices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 0.5f) / slices, 1.0f));
+					UV.push_back(glm::vec2((j - 0.0f) / slices, (i - 0.0f) / (slices / 2)));
+					UV.push_back(glm::vec2((j - 1.0f) / slices, (i - 0.0f) / (slices / 2)));
 				}
 			}
 		}
 	}
-
 
 	for (int i = 0; i < indices.size(); i++)
 	{
 		points.push_back(temp[indices[i]]);
 	}
 
-	GetTangent(temp, indices, UV);
-	GetNormal(temp, indices);
+	GetNormal(points, indices);
+	GetTangent(points, UV, indices);
 }

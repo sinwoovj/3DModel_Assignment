@@ -21,6 +21,6 @@ void main()
     green = vec4(0.0, 1.0, 0.0, 1.0);
     blue = vec4(0.0, 0.0, 1.0, 1.0);
     T = normalize(vTangent);
-    BT = normalize(cross(vNormals, vTangent));
+    BT = normalize(cross(vTangent, vNormals));
     N = normalize(vNormals);
 }
