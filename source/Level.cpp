@@ -155,16 +155,14 @@ void Level::Run()
 			o->transf.pos = temp;
 
 			//Render the object
-			glUseProgram(shader->handle);
 			Render(o);
 		}
 		if (showNormal)
 		{
-			glUseProgram(normal_shader->handle);
 			for (auto o : allObjects)
 			{
 				//Render the object
-				Render(o);
+				Normal(o);
 			}
 		}
 		bool showLighting = true;
@@ -194,7 +192,6 @@ void Level::Run()
 			o->transf.pos = temp;
 
 			//Render the object
-			glUseProgram(shader->handle);
 			Render(o);
 		}
 
@@ -408,6 +405,9 @@ bool Level::Shadow(Model* obj)
 
 void Level::Render(Model* obj)
 {
+	glUseProgram(shader->handle);
+	//use obj FBO
+	glBindBuffer(GL_ARRAY_BUFFER, obj->depthMapFBO);
 	//use obj VBO
 	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO);
 	//use obj VAO
@@ -428,11 +428,6 @@ void Level::Render(Model* obj)
 	//Send model matrix to the shader
 	glm::mat4x4 m2w = obj->ComputeMatrix();
 
-	//Send view matrix to the shader
-	glUseProgram(normal_shader->handle);
-	normal_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
-	normal_shader->setUniform("m2w", m2w);
-	glUseProgram(shader->handle);
 	shader->setUniform("m2w", m2w);
 	shader->setUniform("render_mode", render_mode);
 	shader->setUniform("cameraPos", cam.camPos);
@@ -452,6 +447,27 @@ void Level::Render(Model* obj)
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	glUseProgram(0);
+}
+
+void Level::Normal(Model* obj)
+{
+	glUseProgram(normal_shader->handle);
+	//use obj VBO
+	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO);
+	//use obj VAO
+	glBindVertexArray(obj->VAO);
+
+	//Send model matrix to the shader
+	glm::mat4x4 m2w = obj->ComputeMatrix();
+
+	//Send view matrix to the shader
+	normal_shader->setUniform("model", cam.ProjMat * cam.ViewMat * m2w);
+	normal_shader->setUniform("m2w", m2w);
+	//draw
+	glDrawArrays(GL_TRIANGLES, 0, obj->points.size());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 	glUseProgram(0);
 }
 

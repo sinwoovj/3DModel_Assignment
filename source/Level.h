@@ -32,6 +32,7 @@ struct Level
 private:
 	bool Shadow(Model*);
 	void Render(Model*);
+	void Normal(Model* obj);
 	void Lighting(float time);
 	Level();
 	~Level();

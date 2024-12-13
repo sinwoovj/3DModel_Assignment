@@ -893,6 +893,6 @@ void Model::CreateModelSphere(int slices)
 		points.push_back(temp[indices[i]]);
 	}
 
-	GetNormal(temp, indices);
 	GetTangent(temp, indices, UV);
+	GetNormal(temp, indices);
 }
