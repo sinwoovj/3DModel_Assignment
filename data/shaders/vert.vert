@@ -9,8 +9,8 @@ uniform mat4 m2w;
 uniform mat4 viewMat;
 uniform mat4 projMat;
 uniform mat4 lightMat;
-uniform bool shadowCalculate;
 uniform bool lightView;
+uniform bool shadowCalculate;
 
 out vec2 UV; //v_texCoords
 out vec3 FragPos; //wP
@@ -21,13 +21,16 @@ out mat3 tbnMat;
 
 void main()
 {
-    FragPos = (m2w * vPosition).xyz; 
+    vec4 temp = m2w * vPosition;
+    temp = temp / temp.w;
+    FragPos = temp.xyz; 
     
     UV = vTexCoords;
-    T = normalize(vTangent);
-    BT = normalize(cross(vTangent, vNormals));
-    N = normalize(vNormals);
-    tbnMat = transpose(mat3(T, BT, N)); //row major
+    T = normalize(mat3(m2w) * vTangent);
+    N = normalize(mat3(m2w) * vNormals);
+    BT = normalize(cross(T, N));
+    //tbnMat = transpose(mat3(T, BT, N)); //row major
+    tbnMat = mat3(T, BT, N);
     
     if(lightView)
     {

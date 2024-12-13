@@ -54,8 +54,6 @@ void Model::Initialize()
 	CreateTexobj();
 
 	CreateNorMap();
-
-	CreateShadow();
 }
 
 void Model::LoadModel()
@@ -169,10 +167,6 @@ void Model::InitModel()
 	if (vertices.size() == 0)
 		return;
 
-	//Gen FBO
-	glGenFramebuffers(1, &depthMapFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-
 	//Gen VBO
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -203,7 +197,7 @@ void Model::InitModel()
 
 }
 
-Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO(0), VAO(0), depthMapFBO(0), normal_tex(0), texData(nullptr), norTexData(nullptr)
+Model::Model(const CS300Parser::Transform& _transform) : transf(_transform), VBO(0), VAO(0), normal_tex(0), texData(nullptr), norTexData(nullptr)
 {
 	Initialize();
 }
@@ -212,9 +206,7 @@ Model::~Model()
 {
 	glDeleteBuffers(1, &VBO);
 	glDeleteVertexArrays(1, &VAO);
-	glDeleteFramebuffers(1, &depthMapFBO);
 	glDeleteTextures(1, &normal_tex);
-	glDeleteTextures(1, &depthMap);
 	glDeleteTextures(1, &texobj);
 	texData = nullptr;
 	norTexData = nullptr;
@@ -252,10 +244,6 @@ void Model::InitVertexArray()
 	//Sanity Check
 	if (vertices.size() == 0)
 		return;
-
-	//Gen FBO
-	glGenFramebuffers(1, &depthMapFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 
 	//Gen VBO
 	glGenBuffers(1, &VBO);
@@ -327,19 +315,6 @@ void Model::CreateTexobj()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void Model::CreateShadow()
-{
-	glGenTextures(1, &depthMap);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16,
-		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 

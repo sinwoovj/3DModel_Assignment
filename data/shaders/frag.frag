@@ -69,10 +69,9 @@ void main()
             matDiff = vec4(BT ,1.0f); // Btan
             break;
     }
-    vec3 norm = normalize(2.0 * texture(normalMap, UV).xyz - 0.1); //TS
-    norm = normalize(inverse(tbnMat)* norm); //MS
-    norm = normalize(mat3(m2w) * norm); //WS
-    vec3 asi = vec3(0.0f); //ambient + att(spot * (I.diffuse+I.specular))
+    vec3 norm = normalize(texture(normalMap, UV).xyz * 2.0 - 1.0); //TS
+    norm = normalize(tbnMat * norm); //MS
+    vec3 asi = vec3(0.0f);
     
     for(int i = 0; i < activeCount; i++)
     {
@@ -100,18 +99,21 @@ void main()
                 lAtt = min(1.0f/((c1) + (c2 * dis) + (c3 * (dis * dis))), 1.0f);
                 lightDir = L;
                 break;
+
             case 1: // when it is spot
                 lAtt = min(1.0f/((c1) + (c2 * dis) + (c3 * (dis * dis))), 1.0f);
-                lightDir = -light[i].direction;
-                vec3 RL = (FragPos - vec3(light[i].position));
-                float Alpha = acos(dot(L,lightDir)/dot(length(L),length(lightDir)));
+
+                lightDir = light[i].direction;
+
+                float cosAlpha = dot(-L, lightDir);
                 float Theta = radians(light[i].spotInner);
                 float Phi = radians(light[i].spotOuter);
                 float P = light[i].spotExponent;
 
-                spot = pow(((cos(Alpha)-cos(Phi))/(cos(Theta)-cos(Phi))), P);
+                spot = pow(((cosAlpha - cos(Phi)) / (cos(Theta) - cos(Phi))), P);
                 spot = clamp(spot, 0, 1);
                 break;
+
             case 2 : //when it is dir
                 //tmp *= lAtt;  not use at dir
                 lightDir = -light[i].direction;
@@ -119,11 +121,11 @@ void main()
         }
 
         //diffuse
-        float diff = max(dot(norm, lightDir), 0.0);
+        float diff = max(dot(norm, L), 0.0);
         vec3 diffuse = diff * matDiff.xyz;
 
         //specular
-        vec3 R = (2.0f * (dot(norm, lightDir)) * norm) - lightDir;
+        vec3 R = normalize((2.0f * (dot(norm, L)) * norm) - L);
         vec3 V = normalize(cameraPos - FragPos);
         vec3 specular = vec3(light[i].specular * material.specular) * (pow(max(dot(R, V),0), material.shininess));
         tmp = spot * (diffuse + specular);

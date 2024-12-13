@@ -130,9 +130,6 @@ void Level::Run()
 			}
 			o->transf.pos = temp;
 
-			//Shadow the object
-			if (!Shadow(o))
-				std::cout << "bad" << std::endl;
 		}
 
 		// Render graphics here
@@ -385,29 +382,9 @@ void Level::AddLights(CS300Parser::Light* light)
 	allLights.push_back(light);
 }
 
-bool Level::Shadow(Model* obj)
-{
-	glUseProgram(depth_shader->handle);
-	depth_shader->setUniform("model", cam.ProjMat * cam.ViewMat * obj->ComputeMatrix());
-	glBindFramebuffer(GL_FRAMEBUFFER, obj->depthMapFBO);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, obj->depthMap, 0);
-	glDrawBuffer(GL_NONE);
-
-	bool res = false;
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-	{
-		res = true;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glUseProgram(0);
-	return res;
-}
-
 void Level::Render(Model* obj)
 {
 	glUseProgram(shader->handle);
-	//use obj FBO
-	glBindBuffer(GL_ARRAY_BUFFER, obj->depthMapFBO);
 	//use obj VBO
 	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO);
 	//use obj VAO
@@ -420,10 +397,6 @@ void Level::Render(Model* obj)
 	shader->setUniform("tex", 1);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, obj->texobj);
-
-	shader->setUniform("depthMap", 2);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, obj->depthMap);
 
 	//Send model matrix to the shader
 	glm::mat4x4 m2w = obj->ComputeMatrix();

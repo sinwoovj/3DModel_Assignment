@@ -40,8 +40,6 @@ struct Model
 	std::vector<int> normalIndeces;
 	unsigned int VAO;
 	unsigned int VBO;
-	unsigned int depthMapFBO; // depthMapFBO for shadow
-	unsigned int depthMap;
 	unsigned int normal_tex;
 	unsigned int texobj;
 
@@ -60,7 +58,6 @@ struct Model
 
 	void InitVertexArray();
 	void CreateTexobj();
-	void CreateShadow();
 	void CreateNorMap();
 	void GetNormal(std::vector<glm::vec3>& v, std::vector<int>& ind);
 	void GetTangent(std::vector<glm::vec3>& v, std::vector<glm::vec2>& uv, std::vector<int>& ind);
